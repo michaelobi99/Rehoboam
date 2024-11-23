@@ -51,21 +51,23 @@ float standard_deviation(const std::vector<int>& scores, float mean) {
 int main(int argc, char* argv[]) {
 	//only basketball is currently supported.
 	//Future sports include, Tennis, Baseball, Hockey and Football.
+	if (argc < 2) {
+		printf("Usage: Rehoboam [filename]\n");
+		exit(1);
+	}
+	const char* file_path = argv[1];
 	std::vector<int> home_score, away_score, h2h_score;
 	std::string home_team{}, away_team{};
-	int score{ 0 };
-	int count{ 0 };
 	std::string match;
 	std::string line;
 	std::vector<int> scores;
-	std::fstream file{ "file.txt", std::ios::in | std::ios::binary };
+	std::fstream file{ file_path, std::ios::in | std::ios::binary};
 	if (!file.is_open()) {
 		std::cerr << "Failed to open file\n";
 		exit(1);
 	}
 
-
-	//This loop reads all non-empty lines in the file three lines in a single loop.
+	//This loop reads all non-empty lines in the file. Three lines in a single loop.
 	while (!file.eof()) {
 		//Read until a non-empty line is found
 		while (std::getline(file, line) && line.size() <= 1) continue;
@@ -135,8 +137,6 @@ int main(int argc, char* argv[]) {
 #endif // _MSC_VER
 	}//while
 
-
 	file.close();
-
 	return 0;
 }
