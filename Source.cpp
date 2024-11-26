@@ -80,7 +80,6 @@ int main(int argc, char* argv[]) {
 		line.clear();
 
 		while (std::getline(file, line) && line.size() <= 1) continue;
-		if (file.eof()) break;
 		str_token = split_string(line.c_str(), line.size());
 		match += " vs " + str_token[0];
 		for (int i = 1; i < str_token.size(); ++i) {
@@ -89,7 +88,6 @@ int main(int argc, char* argv[]) {
 		line.clear();
 
 		while (std::getline(file, line) && line.size() <= 1) continue;
-		if (file.eof()) break;
 		str_token = split_string(line.c_str(), line.size());
 		for (int i = 1; i < str_token.size(); ++i) {
 			h2h_score.push_back((int)(std::stoi(str_token[i])));
@@ -124,10 +122,15 @@ int main(int argc, char* argv[]) {
 		away_average = fulltime_mean(away_score); away_std_deviation = standard_deviation(away_score, away_average);
 		h2h_average = fulltime_mean(h2h_score); h2h_std_deviation = standard_deviation(h2h_score, h2h_average);
 
+		float avg_total = home_average + away_average;
+		float avg_lower_bound = (home_average - home_std_deviation) + (away_average - away_std_deviation);
+		float avg_upper_bound = (home_average + home_std_deviation) + (away_average + away_std_deviation);
+
 		printf("%s\n", match.c_str());
 		printf("Home average: %.3f, Home bound: {%.3f - %.3f}\n", home_average, home_average - home_std_deviation, home_average + home_std_deviation);
 		printf("Away average: %.3f, Away bound: {%.3f - %.3f}\n", away_average, away_average - away_std_deviation, away_average + away_std_deviation);
-		printf("H2H average:  %.3f, H2H  bound: {%.3f - %.3f}\n\n", h2h_average, h2h_average - h2h_std_deviation, h2h_average + h2h_std_deviation);
+		//printf("H2H average:  %.3f, H2H  bound: {%.3f - %.3f}\n\n", h2h_average, h2h_average - h2h_std_deviation, h2h_average + h2h_std_deviation);
+		printf("H2H average:  %.3f, H2H  bound: {%.3f - %.3f}\n\n", avg_total, avg_lower_bound, avg_upper_bound);
 		match.clear();
 		home_score.clear();
 		away_score.clear();
