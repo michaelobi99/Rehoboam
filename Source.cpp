@@ -4,16 +4,33 @@
 #include <sstream>
 #include <random>
 #include <string>
+#include <ranges>
 
 #ifdef _MSC_VER
 #include <Windows.h>
 #endif // _MSC_VER
 
 
+std::string trim(const std::string& str) {
+	auto start = std::find_if_not(str.begin(), str.end(), [](unsigned char ch) {
+		return std::isspace(ch);
+	});
+
+	auto end = std::find_if_not(str.rbegin(), str.rend(), [](unsigned char ch) {
+		return std::isspace(ch);
+	}).base();
+
+	return (start < end) ? std::string(start, end) : "";
+}
+
 std::vector<std::string> split_string(const char* str, size_t length) {
 	std::vector<std::string> split_str;
 	std::string s{};
-	for (int i = 0; i < length; ++i) {
+	int i = 0;
+	while (!std::isdigit(str[i])) ++i;
+	std::string team_name = trim(std::string(str, i));
+	split_str.push_back(team_name);
+	for (; i < length; ++i) {
 		if (!isspace(str[i]))
 			s.push_back(str[i]);
 		else {
