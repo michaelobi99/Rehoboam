@@ -60,7 +60,7 @@ float standard_deviation(const std::vector<int>& scores, float mean) {
 	for (unsigned i{ 0 }; i < size; ++i) {
 		variance += std::pow((mean - scores[i]), 2);
 	}
-	variance /= (float)size;
+	variance /= ((float)size - 1);
 	return std::sqrt(variance);
 }
 
@@ -137,7 +137,6 @@ int main(int argc, char* argv[]) {
 		float home_std_deviation{ 0.0 }, away_std_deviation{ 0.0 }, h2h_std_deviation{ 0.0 };
 		home_average = fulltime_mean(home_score); home_std_deviation = standard_deviation(home_score, home_average);
 		away_average = fulltime_mean(away_score); away_std_deviation = standard_deviation(away_score, away_average);
-		h2h_average = fulltime_mean(h2h_score); h2h_std_deviation = standard_deviation(h2h_score, h2h_average);
 
 		float avg_total = home_average + away_average;
 		float avg_lower_bound = (home_average - home_std_deviation) + (away_average - away_std_deviation);
@@ -146,7 +145,6 @@ int main(int argc, char* argv[]) {
 		printf("%s\n", match.c_str());
 		printf("Home average: %.3f, Home bound: {%.3f - %.3f}\n", home_average, home_average - home_std_deviation, home_average + home_std_deviation);
 		printf("Away average: %.3f, Away bound: {%.3f - %.3f}\n", away_average, away_average - away_std_deviation, away_average + away_std_deviation);
-		//printf("H2H average:  %.3f, H2H  bound: {%.3f - %.3f}\n\n", h2h_average, h2h_average - h2h_std_deviation, h2h_average + h2h_std_deviation);
 		printf("H2H average:  %.3f, H2H  bound: {%.3f - %.3f}\n\n", avg_total, avg_lower_bound, avg_upper_bound);
 		match.clear();
 		home_score.clear();
