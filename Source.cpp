@@ -5,6 +5,7 @@
 #include <random>
 #include <string>
 #include <ranges>
+#include "T-distribution.h"
 
 #ifdef _MSC_VER
 #include <Windows.h>
@@ -133,19 +134,46 @@ int main(int argc, char* argv[]) {
 		SetConsoleTextAttribute(hConsole, text_color | FOREGROUND_INTENSITY);
 #endif // Change console color
 
-		float home_average{ 0.0 }, away_average{ 0.0 }, h2h_average{ 0.0 };
-		float home_std_deviation{ 0.0 }, away_std_deviation{ 0.0 }, h2h_std_deviation{ 0.0 };
-		home_average = fulltime_mean(home_score); home_std_deviation = standard_deviation(home_score, home_average);
-		away_average = fulltime_mean(away_score); away_std_deviation = standard_deviation(away_score, away_average);
 
-		float avg_total = home_average + away_average;
-		float avg_lower_bound = (home_average - home_std_deviation) + (away_average - away_std_deviation);
-		float avg_upper_bound = (home_average + home_std_deviation) + (away_average + away_std_deviation);
+		float home_mean{ 0.0 }, away_mean{ 0.0 };
+		float home_stddev{ 0.0 }, away_stddev{ 0.0 };
+		home_mean = fulltime_mean(home_score); 
+		home_stddev = standard_deviation(home_score, home_mean);
+		away_mean = fulltime_mean(away_score); 
+		away_stddev = standard_deviation(away_score, away_mean);
+		float mean_total = home_mean + away_mean;
+		
+		const char* str1 = "Z-Distribution";
+		const char* str2 = "T-Distribution";
 
-		printf("%s\n", match.c_str());
-		printf("Home average: %.3f, Home bound: {%.3f - %.3f}\n", home_average, home_average - home_std_deviation, home_average + home_std_deviation);
-		printf("Away average: %.3f, Away bound: {%.3f - %.3f}\n", away_average, away_average - away_std_deviation, away_average + away_std_deviation);
-		printf("H2H average:  %.3f, H2H  bound: {%.3f - %.3f}\n\n", avg_total, avg_lower_bound, avg_upper_bound);
+		float total_mean_lower_bound = (home_mean - home_stddev) + (away_mean - away_stddev);
+		float total_mean_upper_bound = (home_mean + home_stddev) + (away_mean + away_stddev);
+
+		float t_upper_bound{ 0.0 }, t_lower_bound{ 0.0 };
+
+		//printf("%45s\n", match.c_str());
+		std::cout << std::setw(50) << std::right << match << "\n";
+		//printf("                     %-25s %10s\n", str1, str2);
+		std::cout << std::setw(30) << std::right << str1 << std::setw(30) << std::right << str2 << "\n";
+
+
+		//std::cout << std::setprecision(6);
+		//Home
+		t_dist(home_score, home_mean, home_stddev, &t_lower_bound, &t_upper_bound);
+		float home_tdist_lowwer{ t_lower_bound }, home_tdist_upper{ t_upper_bound };
+		std::cout << "Home: " << std::setw(10) << std::left << home_mean << "(" << home_mean - home_stddev << "-" << home_mean + home_stddev << std::setw(5) << std::left << ")" <<
+			std::setw(5)<<std::right<< "(" << home_tdist_lowwer<<" - " << home_tdist_upper<<")\n";
+
+		//Away
+		t_dist(away_score, away_mean, away_stddev, &t_lower_bound, &t_upper_bound);
+		float away_tdist_lower{ t_lower_bound }, away_tdist_upper{ t_upper_bound };
+		std::cout << "Away: " << std::setw(10) << std::left << away_mean << "(" << away_mean - away_stddev << "-" << away_mean + away_stddev << std::setw(5) << std::left << ")" <<
+			std::setw(5) << std::right << "(" << away_tdist_lower << " - " << away_tdist_upper << ")\n";
+
+		//H2H
+		std::cout << "H2H : " << std::setw(10) << std::left << mean_total << "(" << total_mean_lower_bound << "-" << total_mean_upper_bound << std::setw(5) << std::left << ")" << 
+			std::setw(5) << std::right << "(" << home_tdist_lowwer + away_tdist_lower << " - " << home_tdist_upper + away_tdist_upper << ")\n\n";
+
 		match.clear();
 		home_score.clear();
 		away_score.clear();

@@ -1,6 +1,11 @@
 #pragma once
+#include <vector>
+#include <iomanip>
+#include <sstream>
+#include <string>
 
-double t_table[30][11] = {
+//t_table[degree_of_freedom][tail_probability]
+float t_table[30][11] = {
 	{0.000, 1.000, 1.376, 1.963, 3.078, 6.314, 12.71, 31.82, 63.66, 318.31, 636.62},
 	{0.000, 0.816, 1.061, 1.386, 1.886, 2.920, 4.303, 6.965, 9.925, 22.327, 31.599},
 	{0.000, 0.765, 0.978, 1.250, 1.638, 2.353, 3.182, 4.541, 5.841, 10.215, 12.924},
@@ -32,3 +37,31 @@ double t_table[30][11] = {
 	{0.000, 0.683, 0.854, 1.055, 1.311, 1.699, 2.045, 2.462, 2.756, 3.396, 3.659},
 	{0.000, 0.683, 0.854, 1.055, 1.310, 1.697, 2.042, 2.457, 2.750, 3.385, 3.646}
 };
+
+int getTailProbabilityIndex(std::string confidence_level) {
+	if (confidence_level.starts_with("0.0")) return 0;
+	if (confidence_level.starts_with("0.5")) return 1;
+	if (confidence_level.starts_with("0.6")) return 2;
+	if (confidence_level.starts_with("0.7")) return 3;
+	if (confidence_level.starts_with("0.8")) return 4;
+	if (confidence_level.starts_with("0.90")) return 5;
+	if (confidence_level.starts_with("0.95")) return 6;
+	if (confidence_level.starts_with("0.98")) return 7;
+	if (confidence_level.starts_with("0.99")) return 8;
+	if (confidence_level.starts_with("0.998")) return 9;
+	if (confidence_level.starts_with("0.999")) return 10;
+}
+
+void t_dist(const std::vector<int>& scores, float mean, float stddev, float* lower_bound, float* upper_bound, float confidence_level = 0.98) {
+	unsigned degrees_of_freedom = (unsigned)(scores.size() - 1);
+	if (degrees_of_freedom > 29) {
+		printf("Error: Number of samples exceed optimal number for t-distribution");
+		exit(1);
+	}
+	std::string string = std::to_string(confidence_level);
+	std::string conf_as_str = string + ((string.size() >= 5) ? "" : std::string(5 - string.size(), '0'));
+	float critical_value = t_table[degrees_of_freedom][getTailProbabilityIndex(conf_as_str)];
+	float margin_of_error = stddev / (float)(sqrt(scores.size()));
+	*lower_bound = mean - (critical_value * margin_of_error);
+	*upper_bound = mean + (critical_value * margin_of_error);
+}
