@@ -84,6 +84,7 @@ int main(int argc, char* argv[]) {
 		std::cerr << "Failed to open file\n";
 		exit(1);
 	}
+	std::ostringstream stream;
 
 	//This loop reads all non-empty lines in the file. Three lines in a single loop.
 	while (!file.eof()) {
@@ -151,28 +152,47 @@ int main(int argc, char* argv[]) {
 
 		float t_upper_bound{ 0.0 }, t_lower_bound{ 0.0 };
 
-		//printf("%45s\n", match.c_str());
-		std::cout << std::setw(50) << std::right << match << "\n";
-		//printf("                     %-25s %10s\n", str1, str2);
-		std::cout << std::setw(30) << std::right << str1 << std::setw(30) << std::right << str2 << "\n";
+		printf("%s\n",match.c_str());
+		std::cout << std::setw(30) << std::right << str1 << std::setw(25) << std::right << str2 << "\n";
 
-
-		//std::cout << std::setprecision(6);
 		//Home
 		t_dist(home_score, home_mean, home_stddev, &t_lower_bound, &t_upper_bound);
 		float home_tdist_lowwer{ t_lower_bound }, home_tdist_upper{ t_upper_bound };
-		std::cout << "Home: " << std::setw(10) << std::left << home_mean << "(" << home_mean - home_stddev << "-" << home_mean + home_stddev << std::setw(5) << std::left << ")" <<
-			std::setw(5)<<std::right<< "(" << home_tdist_lowwer<<" - " << home_tdist_upper<<")\n";
+		stream << "Home: " << home_mean;
+		printf("%-15s", stream.str().c_str());
+		stream.str("");
+		stream << "(" << home_mean - home_stddev << " - " << home_mean + home_stddev << ")";
+		printf("%-25s", stream.str().c_str());
+		stream.str("");
+		stream << "(" << home_tdist_lowwer<<" - " << home_tdist_upper<<")\n";
+		printf("%s", stream.str().c_str());
+		stream.str("");
+
 
 		//Away
 		t_dist(away_score, away_mean, away_stddev, &t_lower_bound, &t_upper_bound);
 		float away_tdist_lower{ t_lower_bound }, away_tdist_upper{ t_upper_bound };
-		std::cout << "Away: " << std::setw(10) << std::left << away_mean << "(" << away_mean - away_stddev << "-" << away_mean + away_stddev << std::setw(5) << std::left << ")" <<
-			std::setw(5) << std::right << "(" << away_tdist_lower << " - " << away_tdist_upper << ")\n";
+		stream << "Away: " << away_mean;
+		printf("%-15s", stream.str().c_str());
+		stream.str("");
+		stream << "(" << away_mean - away_stddev << " - " << away_mean + away_stddev << ")";
+		printf("%-25s", stream.str().c_str());
+		stream.str("");
+		stream << "(" << away_tdist_lower << " - " << away_tdist_upper << ")\n";
+		printf("%s", stream.str().c_str());
+		stream.str("");
 
 		//H2H
-		std::cout << "H2H : " << std::setw(10) << std::left << mean_total << "(" << total_mean_lower_bound << "-" << total_mean_upper_bound << std::setw(5) << std::left << ")" << 
-			std::setw(5) << std::right << "(" << home_tdist_lowwer + away_tdist_lower << " - " << home_tdist_upper + away_tdist_upper << ")\n\n";
+		stream << "H2H : " << mean_total;
+		printf("%-15s", stream.str().c_str());
+		stream.str("");
+		stream << "(" << total_mean_lower_bound << " - " << total_mean_upper_bound<<")";
+		printf("%-25s", stream.str().c_str());
+		stream.str("");
+		stream << "(" << home_tdist_lowwer + away_tdist_lower << " - " << home_tdist_upper + away_tdist_upper << ")\n\n";
+		printf("%s", stream.str().c_str());
+		stream.str("");
+		stream.clear();
 
 		match.clear();
 		home_score.clear();
