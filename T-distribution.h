@@ -50,6 +50,8 @@ int getTailProbabilityIndex(std::string confidence_level) {
 	if (confidence_level.starts_with("0.99")) return 8;
 	if (confidence_level.starts_with("0.998")) return 9;
 	if (confidence_level.starts_with("0.999")) return 10;
+	printf("Confidence level not recognized\n");
+	exit(1);
 }
 
 void t_dist(const std::vector<int>& scores, float mean, float stddev, float* lower_bound, float* upper_bound, float confidence_level = 0.90) {
