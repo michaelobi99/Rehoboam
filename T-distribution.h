@@ -54,7 +54,7 @@ int getTailProbabilityIndex(std::string confidence_level) {
 	exit(1);
 }
 
-void t_dist(const std::vector<int>& scores, float mean, float stddev, float* lower_bound, float* upper_bound, float confidence_level = 0.90) {
+void t_dist(const std::vector<int>& scores, float mean, float stddev, float* lower_bound, float* upper_bound, float confidence_level = 0.95) {
 	unsigned degrees_of_freedom = (unsigned)(scores.size() - 1);
 	if (degrees_of_freedom > 29) {
 		printf("Error: Number of samples exceed optimal number for t-distribution");

@@ -6,6 +6,8 @@
 #include <string>
 #include <ranges>
 #include "T-distribution.h"
+#include "ExponentialSmoothing.h"
+#include "LinearRegression.h"
 
 #ifdef _MSC_VER
 #include <Windows.h>
@@ -29,8 +31,9 @@ std::vector<std::string> split_string(const char* str, size_t length) {
 	std::string s{};
 	int i = 0;
 	while (!std::isdigit(str[i])) ++i;
-	std::string team_name = trim(std::string(str, i));
-	split_str.push_back(team_name);
+
+	//insert team name
+	split_str.push_back(trim(std::string(str, i)));
 	for (; i < length; ++i) {
 		if (!isspace(str[i]))
 			s.push_back(str[i]);
@@ -135,29 +138,44 @@ int main(int argc, char* argv[]) {
 		SetConsoleTextAttribute(hConsole, text_color | FOREGROUND_INTENSITY);
 #endif // Change console color
 
+		const char* str1 = "Z-Distribution";
+		const char* str2 = "T-Distribution";
+
 
 		float home_mean{ 0.0 }, away_mean{ 0.0 };
 		float home_stddev{ 0.0 }, away_stddev{ 0.0 };
+
+		//Normal distribution calculation
 		home_mean = fulltime_mean(home_score); 
 		home_stddev = standard_deviation(home_score, home_mean);
 		away_mean = fulltime_mean(away_score); 
 		away_stddev = standard_deviation(away_score, away_mean);
 		float mean_total = home_mean + away_mean;
 		
-		const char* str1 = "Z-Distribution";
-		const char* str2 = "T-Distribution";
-
 		float total_mean_lower_bound = (home_mean - home_stddev) + (away_mean - away_stddev);
 		float total_mean_upper_bound = (home_mean + home_stddev) + (away_mean + away_stddev);
 
+		//T-distribution calculation
 		float t_upper_bound{ 0.0 }, t_lower_bound{ 0.0 };
+
+		t_dist(home_score, home_mean, home_stddev, &t_lower_bound, &t_upper_bound);
+		float home_tdist_lowwer{ t_lower_bound }, home_tdist_upper{ t_upper_bound };
+
+		t_dist(away_score, away_mean, away_stddev, &t_lower_bound, &t_upper_bound);
+		float away_tdist_lower{ t_lower_bound }, away_tdist_upper{ t_upper_bound };
+
+		//Exponential Smoothing
+		float home_exp_pred = exponential_smoothing(home_score);
+		float away_exp_pred = exponential_smoothing(away_score);
+
+		//Simple Linear Regression
+		float home_regression_pred = simple_linear_regression(home_score);
+		float away_regression_pred = simple_linear_regression(away_score);
 
 		printf("%s\n",match.c_str());
 		std::cout << std::setw(30) << std::right << str1 << std::setw(25) << std::right << str2 << "\n";
 
 		//Home
-		t_dist(home_score, home_mean, home_stddev, &t_lower_bound, &t_upper_bound);
-		float home_tdist_lowwer{ t_lower_bound }, home_tdist_upper{ t_upper_bound };
 		stream << "Home: " << home_mean;
 		printf("%-15s", stream.str().c_str());
 		stream.str("");
@@ -170,8 +188,6 @@ int main(int argc, char* argv[]) {
 
 
 		//Away
-		t_dist(away_score, away_mean, away_stddev, &t_lower_bound, &t_upper_bound);
-		float away_tdist_lower{ t_lower_bound }, away_tdist_upper{ t_upper_bound };
 		stream << "Away: " << away_mean;
 		printf("%-15s", stream.str().c_str());
 		stream.str("");
@@ -190,6 +206,12 @@ int main(int argc, char* argv[]) {
 		printf("%-25s", stream.str().c_str());
 		stream.str("");
 		stream << "(" << home_tdist_lowwer + away_tdist_lower << " - " << home_tdist_upper + away_tdist_upper << ")\n\n";
+
+		stream << "Exponential smoothing\n";
+		stream << "Home : " << home_exp_pred << "\nAway : " << away_exp_pred << "\nTotal: " << home_exp_pred + away_exp_pred << "\n\n";
+		stream << "Linear regression\n";
+		stream << "Home : " << home_regression_pred << "\nAway : " << away_regression_pred << "\nTotal: " <<home_regression_pred + away_regression_pred << "\n\n\n";
+
 		printf("%s", stream.str().c_str());
 		stream.str("");
 		stream.clear();
