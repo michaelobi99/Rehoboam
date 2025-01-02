@@ -8,6 +8,7 @@
 #include "T-distribution.h"
 #include "ExponentialSmoothing.h"
 #include "LinearRegression.h"
+#include "ARIMA.h"
 
 #ifdef _MSC_VER
 #include <Windows.h>
@@ -34,6 +35,7 @@ std::vector<std::string> split_string(const char* str, size_t length) {
 
 	//insert team name
 	split_str.push_back(trim(std::string(str, i)));
+
 	for (; i < length; ++i) {
 		if (!isspace(str[i]))
 			s.push_back(str[i]);
@@ -101,6 +103,9 @@ int main(int argc, char* argv[]) {
 		}
 		line.clear();
 
+		predictARIMA(home_score, str_token[0]);
+
+
 		while (std::getline(file, line) && line.size() <= 1) continue;
 		str_token = split_string(line.c_str(), line.size());
 		match += " vs " + str_token[0];
@@ -108,6 +113,8 @@ int main(int argc, char* argv[]) {
 			away_score.push_back((int)(std::stoi(str_token[i])));
 		}
 		line.clear();
+
+		predictARIMA(away_score, str_token[0]);
 
 		while (std::getline(file, line) && line.size() <= 1) continue;
 		str_token = split_string(line.c_str(), line.size());
@@ -211,6 +218,7 @@ int main(int argc, char* argv[]) {
 		stream << "Home : " << home_exp_pred << "\nAway : " << away_exp_pred << "\nTotal: " << home_exp_pred + away_exp_pred << "\n\n";
 		stream << "Linear regression\n";
 		stream << "Home : " << home_regression_pred << "\nAway : " << away_regression_pred << "\nTotal: " <<home_regression_pred + away_regression_pred << "\n\n\n";
+
 
 		printf("%s", stream.str().c_str());
 		stream.str("");
