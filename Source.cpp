@@ -103,9 +103,6 @@ int main(int argc, char* argv[]) {
 		}
 		line.clear();
 
-		predictARIMA(home_score, str_token[0]);
-
-
 		while (std::getline(file, line) && line.size() <= 1) continue;
 		str_token = split_string(line.c_str(), line.size());
 		match += " vs " + str_token[0];
@@ -114,14 +111,49 @@ int main(int argc, char* argv[]) {
 		}
 		line.clear();
 
-		predictARIMA(away_score, str_token[0]);
-
 		while (std::getline(file, line) && line.size() <= 1) continue;
 		str_token = split_string(line.c_str(), line.size());
 		for (int i = 1; i < str_token.size(); ++i) {
 			h2h_score.push_back((int)(std::stoi(str_token[i])));
 		}
 		line.clear();
+
+		//..........................................................................................................................
+		float home_mean{ 0.0 }, away_mean{ 0.0 };
+		float home_stddev{ 0.0 }, away_stddev{ 0.0 };
+
+		//Normal distribution calculation
+		home_mean = fulltime_mean(home_score);
+		home_stddev = standard_deviation(home_score, home_mean);
+		away_mean = fulltime_mean(away_score);
+		away_stddev = standard_deviation(away_score, away_mean);
+		float mean_total = home_mean + away_mean;
+
+		float total_mean_lower_bound = (home_mean - home_stddev) + (away_mean - away_stddev);
+		float total_mean_upper_bound = (home_mean + home_stddev) + (away_mean + away_stddev);
+
+		//T-distribution calculation
+		float t_upper_bound{ 0.0 }, t_lower_bound{ 0.0 };
+
+		t_dist(home_score, home_mean, home_stddev, &t_lower_bound, &t_upper_bound);
+		float home_tdist_lowwer{ t_lower_bound }, home_tdist_upper{ t_upper_bound };
+
+		t_dist(away_score, away_mean, away_stddev, &t_lower_bound, &t_upper_bound);
+		float away_tdist_lower{ t_lower_bound }, away_tdist_upper{ t_upper_bound };
+
+		//Exponential Smoothing
+		float home_exp_pred = exponential_smoothing(home_score);
+		float away_exp_pred = exponential_smoothing(away_score);
+
+		//Simple Linear Regression
+		float home_regression_pred = simple_linear_regression(home_score);
+		float away_regression_pred = simple_linear_regression(away_score);
+
+		//ARIMA
+		double arima_home_pred = predictARIMA(home_score);
+		double arima_away_pred = predictARIMA(away_score);
+
+		//.......................................................................................................................
 
 #ifdef _MSC_VER
 		std::random_device rd{};
@@ -145,43 +177,12 @@ int main(int argc, char* argv[]) {
 		SetConsoleTextAttribute(hConsole, text_color | FOREGROUND_INTENSITY);
 #endif // Change console color
 
+		//Display results
 		const char* str1 = "Z-Distribution";
 		const char* str2 = "T-Distribution";
-
-
-		float home_mean{ 0.0 }, away_mean{ 0.0 };
-		float home_stddev{ 0.0 }, away_stddev{ 0.0 };
-
-		//Normal distribution calculation
-		home_mean = fulltime_mean(home_score); 
-		home_stddev = standard_deviation(home_score, home_mean);
-		away_mean = fulltime_mean(away_score); 
-		away_stddev = standard_deviation(away_score, away_mean);
-		float mean_total = home_mean + away_mean;
-		
-		float total_mean_lower_bound = (home_mean - home_stddev) + (away_mean - away_stddev);
-		float total_mean_upper_bound = (home_mean + home_stddev) + (away_mean + away_stddev);
-
-		//T-distribution calculation
-		float t_upper_bound{ 0.0 }, t_lower_bound{ 0.0 };
-
-		t_dist(home_score, home_mean, home_stddev, &t_lower_bound, &t_upper_bound);
-		float home_tdist_lowwer{ t_lower_bound }, home_tdist_upper{ t_upper_bound };
-
-		t_dist(away_score, away_mean, away_stddev, &t_lower_bound, &t_upper_bound);
-		float away_tdist_lower{ t_lower_bound }, away_tdist_upper{ t_upper_bound };
-
-		//Exponential Smoothing
-		float home_exp_pred = exponential_smoothing(home_score);
-		float away_exp_pred = exponential_smoothing(away_score);
-
-		//Simple Linear Regression
-		float home_regression_pred = simple_linear_regression(home_score);
-		float away_regression_pred = simple_linear_regression(away_score);
-
 		printf("%s\n",match.c_str());
 		std::cout << std::setw(30) << std::right << str1 << std::setw(25) << std::right << str2 << "\n";
-
+		
 		//Home
 		stream << "Home: " << home_mean;
 		printf("%-15s", stream.str().c_str());
@@ -192,7 +193,6 @@ int main(int argc, char* argv[]) {
 		stream << "(" << home_tdist_lowwer<<" - " << home_tdist_upper<<")\n";
 		printf("%s", stream.str().c_str());
 		stream.str("");
-
 
 		//Away
 		stream << "Away: " << away_mean;
@@ -217,7 +217,10 @@ int main(int argc, char* argv[]) {
 		stream << "Exponential smoothing\n";
 		stream << "Home : " << home_exp_pred << "\nAway : " << away_exp_pred << "\nTotal: " << home_exp_pred + away_exp_pred << "\n\n";
 		stream << "Linear regression\n";
-		stream << "Home : " << home_regression_pred << "\nAway : " << away_regression_pred << "\nTotal: " <<home_regression_pred + away_regression_pred << "\n\n\n";
+		stream << "Home : " << home_regression_pred << "\nAway : " << away_regression_pred << "\nTotal: " << home_regression_pred + away_regression_pred << "\n\n";
+
+		stream << "ARIMA\n";
+		stream << "Home : " << arima_home_pred << "\nAway : " << arima_away_pred << "\nTotal: " << arima_home_pred + arima_away_pred << "\n\n\n";
 
 
 		printf("%s", stream.str().c_str());

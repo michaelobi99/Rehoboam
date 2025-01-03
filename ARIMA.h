@@ -163,21 +163,14 @@ public:
     }
 };
 
-void predictARIMA(std::vector<int> const& scores, std::string name){
+double predictARIMA(std::vector<int> const& scores){
     BasketballPredictor predictor;
-    std::vector<double> points_scored;
-
-    for (int i = 0; i < std::size(scores); ++i) points_scored.push_back(scores[i]);
+    std::vector<double> points_scored(std::rbegin(scores), std::rend(scores));
     
     // Add data to predictor
     for (size_t i = 0; i < points_scored.size(); ++i) {
         predictor.add_game_data(points_scored[i]);
     }
-
     // Make predictions
-    double next_score = predictor.predict_next_score();
-
-    std::cout << "Predicted scoring points for " <<name <<": " << next_score << "\n";
-
-
+    return predictor.predict_next_score();
 }
