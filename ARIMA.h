@@ -9,7 +9,7 @@
 // Constants for feature engineering
 #define MOVING_AVG_WINDOW 3
 #define MOMENTUM_WINDOW 5
-#define SEASONAL_PERIOD 7  // Weekly seasonality
+#define SEASONAL_PERIOD 3 
 
 // Structure to hold team statistics
 struct TeamStats {
