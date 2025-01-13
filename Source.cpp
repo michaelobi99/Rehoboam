@@ -79,7 +79,8 @@ int main(int argc, char* argv[]) {
 		exit(1);
 	}
 	const char* file_path = argv[1];
-	std::vector<int> home_score, away_score, h2h_score;
+	std::vector<int> home_score, away_score;
+	std::string match_details;
 	std::string home_team{}, away_team{};
 	std::string match;
 	std::string line;
@@ -111,12 +112,7 @@ int main(int argc, char* argv[]) {
 		}
 		line.clear();
 
-		while (std::getline(file, line) && line.size() <= 1) continue;
-		str_token = split_string(line.c_str(), line.size());
-		for (int i = 1; i < str_token.size(); ++i) {
-			h2h_score.push_back((int)(std::stoi(str_token[i])));
-		}
-		line.clear();
+		while (std::getline(file, match_details) && match_details.size() <= 1) continue;
 
 		//..........................................................................................................................
 		float home_mean{ 0.0 }, away_mean{ 0.0 };
@@ -150,8 +146,8 @@ int main(int argc, char* argv[]) {
 		float away_regression_pred = simple_linear_regression(away_score);
 
 		//ARIMA
-		double arima_home_pred = predictARIMA(home_score);
-		double arima_away_pred = predictARIMA(away_score);
+		/*double arima_home_pred = predictARIMA(home_score);
+		double arima_away_pred = predictARIMA(away_score);*/
 
 		//.......................................................................................................................
 
@@ -178,6 +174,11 @@ int main(int argc, char* argv[]) {
 #endif // Change console color
 
 		//Display results
+		std::string design(match_details.size(), '.');
+		std::cout << design<<"\n";
+		std::cout << match_details << "\n";
+		std::cout << design << "\n";
+
 		const char* str1 = "Z-Distribution";
 		const char* str2 = "T-Distribution";
 		printf("%s\n",match.c_str());
@@ -219,8 +220,8 @@ int main(int argc, char* argv[]) {
 		stream << "Linear regression\n";
 		stream << "Home : " << home_regression_pred << "\nAway : " << away_regression_pred << "\nTotal: " << home_regression_pred + away_regression_pred << "\n\n";
 
-		stream << "ARIMA\n";
-		stream << "Home : " << arima_home_pred << "\nAway : " << arima_away_pred << "\nTotal: " << arima_home_pred + arima_away_pred << "\n\n\n";
+		/*stream << "ARIMA\n";
+		stream << "Home : " << arima_home_pred << "\nAway : " << arima_away_pred << "\nTotal: " << arima_home_pred + arima_away_pred << "\n\n\n";*/
 
 
 		printf("%s", stream.str().c_str());
@@ -230,7 +231,7 @@ int main(int argc, char* argv[]) {
 		match.clear();
 		home_score.clear();
 		away_score.clear();
-		h2h_score.clear();
+		match_details.clear();
 #ifdef _MSC_VER
 		SetConsoleTextAttribute(hConsole, 7);
 #endif // _MSC_VER
