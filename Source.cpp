@@ -31,13 +31,13 @@ std::vector<std::string> split_string(const char* str, size_t length) {
 	std::vector<std::string> split_str;
 	std::string s{};
 	int i = 0;
-	while (!std::isdigit(str[i])) ++i;
+	while (str[i] != ':') i++;
 
 	//insert team name
 	split_str.push_back(trim(std::string(str, i)));
 
 	for (; i < length; ++i) {
-		if (!isspace(str[i]))
+		if (!isdigit(str[i]))
 			s.push_back(str[i]);
 		else {
 			if (s.size() > 0) {
