@@ -31,13 +31,13 @@ std::vector<std::string> split_string(const char* str, size_t length) {
 	std::vector<std::string> split_str;
 	std::string s{};
 	int i = 0;
-	while (str[i] != ':') i++;
+	while (str[i] != ':' && i < length) i++;
 
 	//insert team name
 	split_str.push_back(trim(std::string(str, i)));
 
 	for (; i < length; ++i) {
-		if (!isdigit(str[i]))
+		if (isdigit(str[i]))
 			s.push_back(str[i]);
 		else {
 			if (s.size() > 0) {
@@ -47,6 +47,25 @@ std::vector<std::string> split_string(const char* str, size_t length) {
 		}
 	}
 	return split_str;
+}
+
+std::vector<int> moving_median_smoother(std::vector<int> const& scores, int window = 3) {
+	size_t length = scores.size() - window + 1;
+	std::vector<int> smoothed_scores(length);
+	size_t mid = window / 2; //window is expected to be odd, for now
+	for (int i{ 0 }; i < length; ++i) {
+		std::vector<int> window_data;
+		for (int j = i; j < i + window; ++j) {
+			window_data.push_back(scores[j]);
+		}
+		std::sort(window_data.begin(), window_data.end());
+		smoothed_scores[i] = window_data[mid];
+	}
+	/*for (int i = 0; i < smoothed_scores.size(); ++i) {
+		std::cout << smoothed_scores[i] << " ";
+	}
+	std::cout << '\n';*/
+	return smoothed_scores;
 }
 
 
@@ -102,6 +121,7 @@ int main(int argc, char* argv[]) {
 		for (int i = 1; i < str_token.size(); ++i) {
 			home_score.push_back((int)(std::stoi(str_token[i])));
 		}
+		home_score = moving_median_smoother(home_score);
 		line.clear();
 
 		while (std::getline(file, line) && line.size() <= 1) continue;
@@ -110,6 +130,7 @@ int main(int argc, char* argv[]) {
 		for (int i = 1; i < str_token.size(); ++i) {
 			away_score.push_back((int)(std::stoi(str_token[i])));
 		}
+		away_score = moving_median_smoother(away_score);
 		line.clear();
 
 		while (std::getline(file, match_details) && match_details.size() <= 1) continue;
