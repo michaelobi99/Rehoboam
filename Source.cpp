@@ -52,19 +52,12 @@ std::vector<std::string> split_string(const char* str, size_t length) {
 std::vector<int> moving_median_smoother(std::vector<int> const& scores, int window = 3) {
 	size_t length = scores.size() - window + 1;
 	std::vector<int> smoothed_scores(length);
-	size_t mid = window / 2; //window is expected to be odd, for now
+	size_t mid = window / 2;
 	for (int i{ 0 }; i < length; ++i) {
-		std::vector<int> window_data;
-		for (int j = i; j < i + window; ++j) {
-			window_data.push_back(scores[j]);
-		}
+		std::vector<int> window_data(scores.begin() + i, scores.begin() + i + window);
 		std::sort(window_data.begin(), window_data.end());
 		smoothed_scores[i] = window_data[mid];
 	}
-	/*for (int i = 0; i < smoothed_scores.size(); ++i) {
-		std::cout << smoothed_scores[i] << " ";
-	}
-	std::cout << '\n';*/
 	return smoothed_scores;
 }
 
@@ -121,7 +114,10 @@ int main(int argc, char* argv[]) {
 		for (int i = 1; i < str_token.size(); ++i) {
 			home_score.push_back((int)(std::stoi(str_token[i])));
 		}
-		home_score = moving_median_smoother(home_score);
+
+		// Get smoothed version of the data for regression calculation
+		std::vector<int> smoothed_home_score = moving_median_smoother(home_score);
+
 		line.clear();
 
 		while (std::getline(file, line) && line.size() <= 1) continue;
@@ -130,7 +126,10 @@ int main(int argc, char* argv[]) {
 		for (int i = 1; i < str_token.size(); ++i) {
 			away_score.push_back((int)(std::stoi(str_token[i])));
 		}
-		away_score = moving_median_smoother(away_score);
+
+		// Get smoothed version of data for regression calculation
+		std::vector<int> smoothed_away_score = moving_median_smoother(away_score);
+
 		line.clear();
 
 		while (std::getline(file, match_details) && match_details.size() <= 1) continue;
@@ -163,8 +162,8 @@ int main(int argc, char* argv[]) {
 		float away_exp_pred = exponential_smoothing(away_score);
 
 		//Simple Linear Regression
-		float home_regression_pred = simple_linear_regression(home_score);
-		float away_regression_pred = simple_linear_regression(away_score);
+		float home_regression_pred = simple_linear_regression(smoothed_home_score);
+		float away_regression_pred = simple_linear_regression(smoothed_away_score);
 
 		//ARIMA
 		/*double arima_home_pred = predictARIMA(home_score);
@@ -195,14 +194,13 @@ int main(int argc, char* argv[]) {
 #endif // Change console color
 
 		//Display results
-		std::string design(match_details.size(), '.');
+		std::string design(match_details.size() + match.size() + 5, '.');
 		std::cout << design<<"\n";
-		std::cout << match_details << "\n";
+		std::cout << match<<" - " << match_details << "\n";
 		std::cout << design << "\n";
 
 		const char* str1 = "Z-Distribution";
 		const char* str2 = "T-Distribution";
-		printf("%s\n",match.c_str());
 		std::cout << std::setw(30) << std::right << str1 << std::setw(25) << std::right << str2 << "\n";
 		
 		//Home
