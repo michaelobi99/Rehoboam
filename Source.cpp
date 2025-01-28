@@ -159,7 +159,11 @@ int main(int argc, char* argv[]) {
 
 		//Exponential Smoothing
 		float home_exp_pred = exponential_smoothing(home_score);
+		float home_adaptive_exp_pred = adaptive_exponential_smoothing(home_score);
 		float away_exp_pred = exponential_smoothing(away_score);
+		float away_adaptive_exp_pred = adaptive_exponential_smoothing(away_score);
+
+		
 
 		//Simple Linear Regression
 		float home_regression_pred = simple_linear_regression(smoothed_home_score);
@@ -235,7 +239,9 @@ int main(int argc, char* argv[]) {
 		stream << "(" << home_tdist_lowwer + away_tdist_lower << " - " << home_tdist_upper + away_tdist_upper << ")\n\n";
 
 		stream << "Exponential smoothing\n";
-		stream << "Home : " << home_exp_pred << "\nAway : " << away_exp_pred << "\nTotal: " << home_exp_pred + away_exp_pred << "\n\n";
+		stream << "Home : " << home_exp_pred <<" or "<< home_adaptive_exp_pred
+			<< "\nAway : " << away_exp_pred << " or " << away_adaptive_exp_pred
+			<< "\nTotal: " << home_exp_pred + away_exp_pred << " or "<< home_adaptive_exp_pred + away_adaptive_exp_pred<<"\n\n";
 		stream << "Linear regression\n";
 		stream << "Home : " << home_regression_pred << "\nAway : " << away_regression_pred << "\nTotal: " << home_regression_pred + away_regression_pred << "\n\n";
 
