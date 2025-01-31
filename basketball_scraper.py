@@ -48,6 +48,8 @@ def get_exact(league_name):
     if league_name == "Premier League Women": return "PRE"
     if league_name == "Prva Liga": return "PL"
     if league_name == "Pro B": return "PB"
+    # if league_name == "Pro B": return "PROB"
+    if league_name == "Pro A": return "PA"
     if league_name == "Super League": return "SL"
     if league_name == "Super Lig": return "SL"
     if league_name == "Premijer liga": return "A1"
@@ -64,6 +66,7 @@ def get_exact(league_name):
     # if league_name == "Champions League - Qualification - Winners stage": return "CHL"
     # if league_name == "Champions League": return "CHL"
     if league_name == "1. Liga": return "1L"
+    if league_name == "Korisliiga - Losers stage": return "KOR"
     return league_name
 
 
@@ -80,16 +83,18 @@ def is_desired_league(game_element):
 
         desired_leagues = [
                             # 'ACB', #Spain
-                            # 'NBA', #USA
+                            # 'SLB', #UK
+                            'NBA', #USA
                             # 'NCAA', #USA
+                            # 'NCAA Women', #USA
                             # 'WNBA', #USA
                             # 'CBA', #China         
-                            # 'WCBA Women' #China
-                            'NBB' #Brasil
-                            # 'Liga A', #Argentina
+                            # 'WCBA Women', #China
+                            # 'NBB', #Brasil
+                            'Liga A' #Argentina
                             # 'BBL', #Germany
                             # 'LNB', #France
-                            # 'Pro B', #France
+                            # 'Pro B', #France, Germany
                             # 'Pro A', #Germany
                             # 'Lega A', #Italy
                             # 'NB I. A', #Hungary
@@ -99,12 +104,14 @@ def is_desired_league(game_element):
                             # 'Euroleague',
                             # 'Champions League'
                             # 'Korisliiga', #Finland  
+                            # 'Korisliiga - Losers stage',
                             # 'Basketligaen', #Denmark
                             # 'Basket League', #Greece
                             # 'Basketligan', #Sweden
                             # 'Premier League', #Iceland
                             # 'Premier League Women', #Iceland
                             # 'Super League', #Isreal #Russia
+                            # 'WBL Women', #Isreal women
                             # 'Superliga', #Austria
                             # 'BLNO', #Norway
                             # 'LPB', #Portugal
@@ -114,11 +121,11 @@ def is_desired_league(game_element):
                             # 'NKL', #Lithuania
                             # 'Premijer liga', #Croatia
                             # 'First League', #Serbia  
-                            # 'KBL', #Korea
+                            # 'KBL' #Korea
                             # 'WKBL Women', #Korea
-                            # 'Extraliga', #Slovakia
+                            # 'Extraliga' #Slovakia
                             # 'Basket Liga', #Poland
-                            # '1. Liga' #Czech
+                            # '1. Liga', #Czech
                             # 'Super Lig' #Turkey
 
 
@@ -286,7 +293,7 @@ def scrape_h2h_page(driver, url, league):
 
 def main():
     # 0 for today, 1 for next day games
-    day = 0
+    day = 1
     
     driver = setup_driver()
     try:
@@ -298,15 +305,9 @@ def main():
         file1 = r"C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\NBA1.txt"
         file2 = r"C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\random1.txt"
 
-        # #clear files
-        # with open(file1, 'w'):
-        #     pass
-        # with open(file2, 'w'):
-        #     pass
-        # with open(file3, 'w'):
-        #     pass
+        file1_leagues = ["NBA", "WNBA", "KBL", "LA", "NBB"]
 
-        # For each upcoming game, get last 10 scores and H2H
+        # For each upcoming game, get last 15 scores and H2H
         for number, game in enumerate(upcoming):
             print(f'{number+1}/{number_of_games}', '\r', end = '')
             #Filter only alphabets
@@ -345,7 +346,7 @@ def main():
                     away_score.append(score[0])
 
             
-            file = file2
+            file = file1 if league in file1_leagues  else file2
 
             with open(file, 'a') as fileObj:
                 fileObj.write(f'{home_team}: ')
@@ -355,21 +356,6 @@ def main():
                 fileObj.write(' '.join(str(num) for num in away_score))
                 fileObj.write('\n')
                 fileObj.write(f'({country}, {league}, {game_time})\n\n')
-        
-            # # Print results
-            # print("\nHome team last matches:")
-            # for match in results['home_matches']:
-            #     print(f"{match['date']} - {match['home']} vs {match['away']}: {match['score']}")
-
-            # print("\nAway team last matches:")
-            # for match in results['away_matches']:
-            #     print(f"{match['date']} - {match['home']} vs {match['away']}: {match['score']}")
-
-            # print("\nH2H matches:")
-            # for match in results['h2h_matches']:
-            #     print(f"{match['date']} - {match['home']} vs {match['away']}: {match['score']}")
-            
-            # Add a small delay between games to avoid overwhelming the server
             time.sleep(3)
              
     except Exception as e:
