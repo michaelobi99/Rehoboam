@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-#define SMOOTHING_FACTOR 0.25
+#define SMOOTHING_FACTOR 0.3
 
 float exponential_smoothing(const std::vector<int>& scores) {
 	std::vector<int> scores_reversed(std::rbegin(scores), std::rend(scores));

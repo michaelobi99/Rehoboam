@@ -63,10 +63,11 @@ def get_exact(league_name):
     if league_name == "Lega A": return "LA"
     if league_name == "SLB": return "BBL"  
     if league_name == "BNXT League": return "BNXT"
-    # if league_name == "Champions League - Qualification - Winners stage": return "CHL"
+    if league_name == "Champions League - Winners stage": return "CHL"
     # if league_name == "Champions League": return "CHL"
     if league_name == "1. Liga": return "1L"
     if league_name == "Korisliiga - Losers stage": return "KOR"
+    if league_name == "Korisliiga - Winners stage": return "KOR"
     return league_name
 
 
@@ -84,14 +85,14 @@ def is_desired_league(game_element):
         desired_leagues = [
                             # 'ACB', #Spain
                             # 'SLB', #UK
-                            'NBA', #USA
+                            'NBA' #USA
                             # 'NCAA', #USA
                             # 'NCAA Women', #USA
                             # 'WNBA', #USA
                             # 'CBA', #China         
                             # 'WCBA Women', #China
                             # 'NBB', #Brasil
-                            'Liga A' #Argentina
+                            # 'Liga A', #Argentina
                             # 'BBL', #Germany
                             # 'LNB', #France
                             # 'Pro B', #France, Germany
@@ -102,13 +103,15 @@ def is_desired_league(game_element):
                             # 'ABA League',
                             # 'BNXT League',
                             # 'Euroleague',
-                            # 'Champions League'
+                            # 'Champions League',
+                            # 'Champions League - Winners stage',
                             # 'Korisliiga', #Finland  
                             # 'Korisliiga - Losers stage',
+                            # 'Korisliiga - Winners stage',
                             # 'Basketligaen', #Denmark
                             # 'Basket League', #Greece
                             # 'Basketligan', #Sweden
-                            # 'Premier League', #Iceland
+                            # 'Premier League', #Iceland or Saudi Arabia
                             # 'Premier League Women', #Iceland
                             # 'Super League', #Isreal #Russia
                             # 'WBL Women', #Isreal women
@@ -121,9 +124,9 @@ def is_desired_league(game_element):
                             # 'NKL', #Lithuania
                             # 'Premijer liga', #Croatia
                             # 'First League', #Serbia  
-                            # 'KBL' #Korea
+                            # 'KBL', #Korea
                             # 'WKBL Women', #Korea
-                            # 'Extraliga' #Slovakia
+                            # 'Extraliga', #Slovakia
                             # 'Basket Liga', #Poland
                             # '1. Liga', #Czech
                             # 'Super Lig' #Turkey
@@ -228,17 +231,24 @@ def get_team_last_matches(driver, element, target_league, section_index):
 
     try:
         rows = element.find_elements(By.CLASS_NAME, "h2h__row")
+
+        cutoff_date = datetime.now() - timedelta(days=365) if target_league == 'NCAA' else \
+            datetime.now() - timedelta(days=700)
+
         for row in rows:
             try:
+                date_str = row.find_element(By.CLASS_NAME, "h2h__date").text
+                match_date = datetime.strptime(date_str, '%d.%m.%y')
+
                 league = row.find_element(By.CLASS_NAME, "h2h__event").text
                 league = league.lower()
-                if target_league.startswith(league):
-                    date = row.find_element(By.CLASS_NAME, "h2h__date").text
+
+                if target_league.startswith(league) and match_date > cutoff_date:
                     home_team = row.find_element(By.CLASS_NAME, "h2h__homeParticipant").text
                     away_team = row.find_element(By.CLASS_NAME, "h2h__awayParticipant").text
                     score = row.find_element(By.CLASS_NAME, "h2h__result").text
                     matches.append({
-                        'date': date,
+                        'date': date_str,
                         'home': home_team,
                         'away': away_team,
                         'score': score,
@@ -305,7 +315,8 @@ def main():
         file1 = r"C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\NBA1.txt"
         file2 = r"C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\random1.txt"
 
-        file1_leagues = ["NBA", "WNBA", "KBL", "LA", "NBB"]
+        #file1_leagues = ["NBA", "WNBA", "NCAA", "NCAA Women", "KBL", "LA", "NBB"]
+        file1_countries = ["USA", "ARGENTINA", "BRAZIL", "AUSTRAILIA", "SOUTH KOREA"]
 
         # For each upcoming game, get last 15 scores and H2H
         for number, game in enumerate(upcoming):
@@ -346,7 +357,7 @@ def main():
                     away_score.append(score[0])
 
             
-            file = file1 if league in file1_leagues  else file2
+            file = file1 if country in file1_countries  else file2
 
             with open(file, 'a') as fileObj:
                 fileObj.write(f'{home_team}: ')
