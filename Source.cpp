@@ -82,6 +82,18 @@ float standard_deviation(const std::vector<int>& scores, float mean) {
 	return std::sqrt(variance);
 }
 
+void get_recommendation(float pred_1, float pred_2, float pred_3) {
+	float avg_points = 0.4f * pred_1 + 0.4f * pred_2 + 0.2f * pred_3;
+	const int max = 7;
+
+	if (std::abs(pred_1 - pred_2) < max && std::abs(pred_1 - pred_3) < max && std::abs(pred_2 - pred_3) < max) {
+		printf("RECOMMENDATION: High confidence - Expect about %.2f total points.\n\n", avg_points);
+	}
+	else {
+		printf("RECOMMENDATION: Low confidence - Expect about %.2f total points.\n\n", avg_points);
+	}
+}
+
 
 int main(int argc, char* argv[]) {
 	//only basketball is currently supported.
@@ -103,6 +115,8 @@ int main(int argc, char* argv[]) {
 		exit(1);
 	}
 	std::ostringstream stream;
+
+	float recommendation{ 0.0 };
 
 	//This loop reads all non-empty lines in the file. Three lines in a single loop.
 	while (!file.eof()) {
@@ -178,19 +192,23 @@ int main(int argc, char* argv[]) {
 #ifdef _MSC_VER
 		std::random_device rd{};
 		auto mtgen = std::mt19937{ rd() };
-		auto ud = std::uniform_int_distribution<int>{ 1, 5 };
+		auto ud = std::uniform_int_distribution<int>{ 1, 7 };
 		int random_number = ud(mtgen);
 		int text_color = 0;
 		switch (random_number) {
-		case 1: text_color = 1;
+		case 1: text_color = 5;
 			break;
-		case 2: text_color = 2;
+		case 2: text_color = 6;
 			break;
-		case 3: text_color = 4;
+		case 3: text_color = 9;
 			break;
-		case 4: text_color = 6;
+		case 4: text_color = 10;
 			break;
-		case 5: text_color = 13;
+		case 5: text_color = 12;
+			break;
+		case 6: text_color = 13;
+			break;
+		case 7: text_color = 14;
 			break;
 		}
 		HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -245,12 +263,15 @@ int main(int argc, char* argv[]) {
 
 		stream << "Linear regression\n";
 		stream << "Home : " << home_regression_pred << "\nAway : " << away_regression_pred << "\nTotal: " << home_regression_pred + away_regression_pred << "\n\n";
+		
 
 		/*stream << "ARIMA\n";
 		stream << "Home : " << arima_home_pred << "\nAway : " << arima_away_pred << "\nTotal: " << arima_home_pred + arima_away_pred << "\n\n\n";*/
 
 
 		printf("%s", stream.str().c_str());
+		get_recommendation(home_mean + away_mean, home_exp_pred + away_exp_pred, home_regression_pred + away_regression_pred);
+
 		stream.str("");
 		stream.clear();
 
