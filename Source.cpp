@@ -4,6 +4,7 @@
 #include <sstream>
 #include <random>
 #include <string>
+#include <tuple>
 #include <ranges>
 #include "T-distribution.h"
 #include "ExponentialSmoothing.h"
@@ -27,42 +28,46 @@ std::string trim(const std::string& str) {
 	return (start < end) ? std::string(start, end) : "";
 }
 
-std::vector<std::string> split_string(const char* str, size_t length) {
-	std::vector<std::string> split_str;
-	std::string s{};
-	int i = 0;
-	while (str[i] != ':' && i < length) i++;
+std::tuple<std::string, std::vector<int>, std::vector<int>> split_string(const char* str, size_t length) {
+	std::istringstream stream(str);
 
-	//insert team name
-	split_str.push_back(trim(std::string(str, i)));
+	std::string name;
+	std::getline(stream, name, ':');
+	name = trim(name);
 
-	for (; i < length; ++i) {
-		if (isdigit(str[i]))
-			s.push_back(str[i]);
-		else {
-			if (s.size() > 0) {
-				split_str.push_back(s);
-				s.clear();
+	std::string past_scores_str{ "" };
+	std::getline(stream, past_scores_str, ':');
+	past_scores_str = trim(past_scores_str);
+
+	std::string h2h_scores_str{""};
+	std::getline(stream, h2h_scores_str, ':');
+
+
+	auto to_int_vec = [](std::string& str) {
+		std::vector<int> vec;
+		std::string s{ "" };
+		for (int i = 0; i < str.size(); ++i) {
+			if (isdigit(str[i]))
+				s.push_back(str[i]);
+			else {
+				if (s.size() > 0) {
+					vec.push_back(std::stoi(s));
+					s.clear();
+				}
 			}
 		}
-	}
-	return split_str;
-}
+		if (s.size() > 0) vec.push_back(std::stoi(s));
+		return vec;
+	};
 
-std::vector<int> moving_median_smoother(std::vector<int> const& scores, int window = 3) {
-	size_t length = scores.size() - window + 1;
-	std::vector<int> smoothed_scores(length);
-	size_t mid = window / 2;
-	for (int i{ 0 }; i < length; ++i) {
-		std::vector<int> window_data(scores.begin() + i, scores.begin() + i + window);
-		std::sort(window_data.begin(), window_data.end());
-		smoothed_scores[i] = window_data[mid];
-	}
-	return smoothed_scores;
+	std::vector<int> past_scores = to_int_vec(past_scores_str);
+	std::vector<int> h2h_scores = (h2h_scores_str.size() > 0) ? to_int_vec(h2h_scores_str) : std::vector<int>{};
+	return std::tuple(name, past_scores, h2h_scores);
 }
 
 
 float fulltime_mean(const std::vector<int>& scores) {
+	if (scores.empty()) return 0;
 	float result{ 0. };
 	int size = scores.size();
 	for (unsigned i{ 0 }; i < size; ++i) {
@@ -73,6 +78,7 @@ float fulltime_mean(const std::vector<int>& scores) {
 }
 
 float standard_deviation(const std::vector<int>& scores, float mean) {
+	if (scores.empty()) return 0;
 	float variance{ 0 };
 	int size = scores.size();
 	for (unsigned i{ 0 }; i < size; ++i) {
@@ -103,10 +109,8 @@ int main(int argc, char* argv[]) {
 		exit(1);
 	}
 	const char* file_path = argv[1];
-	std::vector<int> home_score, away_score;
 	std::string match_details;
-	std::string home_team{}, away_team{};
-	std::string match;
+	std::string match_string;
 	std::string line;
 	std::vector<int> scores;
 	std::fstream file{ file_path, std::ios::in | std::ios::binary};
@@ -123,65 +127,59 @@ int main(int argc, char* argv[]) {
 		//Read until a non-empty line is found
 		while (std::getline(file, line) && line.size() <= 1) continue;
 		if (file.eof()) break;
-		std::vector<std::string> str_token = split_string(line.c_str(), line.size());
-		match += str_token[0];
-		for (int i = 1; i < str_token.size(); ++i) {
-			home_score.push_back((int)(std::stoi(str_token[i])));
-		}
 
-		// Get smoothed version of the data for regression calculation
-		std::vector<int> smoothed_home_score = moving_median_smoother(home_score);
-
+		auto [home_team_name, home_past_scores, home_h2h_scores] = split_string(line.c_str(), line.size());
+		match_string += home_team_name;
+		
 		line.clear();
-
 		while (std::getline(file, line) && line.size() <= 1) continue;
-		str_token = split_string(line.c_str(), line.size());
-		match += " vs " + str_token[0];
-		for (int i = 1; i < str_token.size(); ++i) {
-			away_score.push_back((int)(std::stoi(str_token[i])));
-		}
 
-		// Get smoothed version of data for regression calculation
-		std::vector<int> smoothed_away_score = moving_median_smoother(away_score);
-
+		auto [away_team_name, away_past_scores, away_h2h_scores] = split_string(line.c_str(), line.size());
+		match_string += " vs " + away_team_name;
+		
 		line.clear();
-
 		while (std::getline(file, match_details) && match_details.size() <= 1) continue;
 
 		//..........................................................................................................................
+
+		float home_h2h_mean = fulltime_mean(home_h2h_scores);
+		float away_h2h_mean = fulltime_mean(away_h2h_scores);
+
+		//Exponential Smoothing
+		float home_exp_pred = exponential_smoothing(home_past_scores) * ((home_h2h_mean == 0.f) ? 1.0 : 0.8) + home_h2h_mean * 0.2;
+		//float home_adaptive_exp_pred = adaptive_exponential_smoothing(home_score);
+		float away_exp_pred = exponential_smoothing(away_past_scores) * ((away_h2h_mean == 0.f) ? 1.0 : 0.8) + away_h2h_mean * 0.2;
+		//float away_adaptive_exp_pred = adaptive_exponential_smoothing(away_score);
+
+		//Simple Linear Regression
+		float home_regression_pred = simple_linear_regression(home_past_scores) * ((home_h2h_mean == 0.f) ? 1.0 : 0.8) + home_h2h_mean * 0.2;
+		float away_regression_pred = simple_linear_regression(away_past_scores) * ((away_h2h_mean == 0.f) ? 1.0 : 0.8) + away_h2h_mean * 0.2;
+
+
+		//Normal distribution calculation
 		float home_mean{ 0.0 }, away_mean{ 0.0 };
 		float home_stddev{ 0.0 }, away_stddev{ 0.0 };
 
-		//Normal distribution calculation
-		home_mean = fulltime_mean(home_score);
-		home_stddev = standard_deviation(home_score, home_mean);
-		away_mean = fulltime_mean(away_score);
-		away_stddev = standard_deviation(away_score, away_mean);
-		float mean_total = home_mean + away_mean;
+		std::copy(home_h2h_scores.begin(), home_h2h_scores.end(), std::back_inserter(home_past_scores));
+		std::copy(away_h2h_scores.begin(), away_h2h_scores.end(), std::back_inserter(away_past_scores));
 
+		home_mean = fulltime_mean(home_past_scores);
+		home_stddev = standard_deviation(home_past_scores, home_mean);
+		away_mean = fulltime_mean(away_past_scores);
+		away_stddev = standard_deviation(away_past_scores, away_mean);
+
+		float mean_total = home_mean + away_mean;
 		float total_mean_lower_bound = (home_mean - home_stddev) + (away_mean - away_stddev);
 		float total_mean_upper_bound = (home_mean + home_stddev) + (away_mean + away_stddev);
 
 		//T-distribution calculation
 		float t_upper_bound{ 0.0 }, t_lower_bound{ 0.0 };
 
-		t_dist(home_score, home_mean, home_stddev, &t_lower_bound, &t_upper_bound);
-		float home_tdist_lowwer{ t_lower_bound }, home_tdist_upper{ t_upper_bound };
+		t_dist(home_past_scores, home_mean, home_stddev, &t_lower_bound, &t_upper_bound);
+		float home_tdist_lower{ t_lower_bound }, home_tdist_upper{ t_upper_bound };
 
-		t_dist(away_score, away_mean, away_stddev, &t_lower_bound, &t_upper_bound);
+		t_dist(away_past_scores, away_mean, away_stddev, &t_lower_bound, &t_upper_bound);
 		float away_tdist_lower{ t_lower_bound }, away_tdist_upper{ t_upper_bound };
-
-		//Exponential Smoothing
-		float home_exp_pred = exponential_smoothing(home_score);
-		//float home_adaptive_exp_pred = adaptive_exponential_smoothing(home_score);
-		float away_exp_pred = exponential_smoothing(away_score);
-		//float away_adaptive_exp_pred = adaptive_exponential_smoothing(away_score);
-
-		
-
-		//Simple Linear Regression
-		float home_regression_pred = simple_linear_regression(smoothed_home_score);
-		float away_regression_pred = simple_linear_regression(smoothed_away_score);
 
 		//ARIMA
 		/*double arima_home_pred = predictARIMA(home_score);
@@ -216,9 +214,9 @@ int main(int argc, char* argv[]) {
 #endif // Change console color
 
 		//Display results
-		std::string design(match_details.size() + match.size() + 5, '.');
+		std::string design(match_details.size() + match_string.size() + 5, '.');
 		std::cout << design<<"\n";
-		std::cout << match<<" - " << match_details << "\n";
+		std::cout << match_string <<" - " << match_details << "\n";
 		std::cout << design << "\n";
 
 		const char* str1 = "Z-Distribution";
@@ -232,7 +230,7 @@ int main(int argc, char* argv[]) {
 		stream << "(" << home_mean - home_stddev << " - " << home_mean + home_stddev << ")";
 		printf("%-25s", stream.str().c_str());
 		stream.str("");
-		stream << "(" << home_tdist_lowwer<<" - " << home_tdist_upper<<")\n";
+		stream << "(" << home_tdist_lower<<" - " << home_tdist_upper<<")\n";
 		printf("%s", stream.str().c_str());
 		stream.str("");
 
@@ -254,7 +252,7 @@ int main(int argc, char* argv[]) {
 		stream << "(" << total_mean_lower_bound << " - " << total_mean_upper_bound<<")";
 		printf("%-25s", stream.str().c_str());
 		stream.str("");
-		stream << "(" << home_tdist_lowwer + away_tdist_lower << " - " << home_tdist_upper + away_tdist_upper << ")\n\n";
+		stream << "(" << home_tdist_lower + away_tdist_lower << " - " << home_tdist_upper + away_tdist_upper << ")\n\n";
 
 		stream << "Exponential smoothing\n";
 		stream << "Home : " << home_exp_pred
@@ -275,9 +273,7 @@ int main(int argc, char* argv[]) {
 		stream.str("");
 		stream.clear();
 
-		match.clear();
-		home_score.clear();
-		away_score.clear();
+		match_string.clear();
 		match_details.clear();
 #ifdef _MSC_VER
 		SetConsoleTextAttribute(hConsole, 7);

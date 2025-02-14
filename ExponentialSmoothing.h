@@ -5,7 +5,7 @@
 
 float exponential_smoothing(const std::vector<int>& scores) {
 	std::vector<int> scores_reversed(std::rbegin(scores), std::rend(scores));
-	if (scores.size() == 0) exit(1);
+	if (scores.size() == 0) return 0;
 	int N = scores_reversed.size();
 	float current_smoothed_value{ 0.0 }, current_value{ 0.0 }, previous_smoothed_value{ 0.0 };
 	previous_smoothed_value = scores_reversed[0];
@@ -44,4 +44,17 @@ float adaptive_exponential_smoothing(const std::vector<int>& scores, float initi
     }
 
     return current_smoothed_value;
+}
+
+
+std::vector<int> moving_median_smoother(std::vector<int> const& scores, int window = 3) {
+	size_t length = scores.size() - window + 1;
+	std::vector<int> smoothed_scores(length);
+	size_t mid = window / 2;
+	for (int i{ 0 }; i < length; ++i) {
+		std::vector<int> window_data(scores.begin() + i, scores.begin() + i + window);
+		std::sort(window_data.begin(), window_data.end());
+		smoothed_scores[i] = window_data[mid];
+	}
+	return smoothed_scores;
 }
