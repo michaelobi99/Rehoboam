@@ -7,6 +7,7 @@
 #include <tuple>
 #include <ranges>
 #include "T-distribution.h"
+#include "Z-distribution.h"
 #include "ExponentialSmoothing.h"
 #include "LinearRegression.h"
 #include "ARIMA.h"
@@ -14,6 +15,15 @@
 #ifdef _MSC_VER
 #include <Windows.h>
 #endif // _MSC_VER
+
+
+#define HIGH_LEAGUE_RANGE 50
+#define MID_LEAGUE_RANGE 45
+#define LOW_LEAGUE_RANGE  40
+
+const std::vector<std::string> HIGH_SCORING_LEAGUES = { "NBA", "CBA" };
+const std::vector<std::string> MID_SCORING_LEAGUES = { "NBL" };
+
 
 
 std::string trim(const std::string& str) {
@@ -66,7 +76,7 @@ std::tuple<std::string, std::vector<int>, std::vector<int>> split_string(const c
 }
 
 
-float fulltime_mean(const std::vector<int>& scores) {
+float mean(const std::vector<int>& scores) {
 	if (scores.empty()) return 0;
 	float result{ 0. };
 	int size = scores.size();
@@ -79,16 +89,16 @@ float fulltime_mean(const std::vector<int>& scores) {
 
 float standard_deviation(const std::vector<int>& scores, float mean) {
 	if (scores.empty()) return 0;
-	float variance{ 0 };
+	float sum_squared_diff{ 0.0 };
 	int size = scores.size();
 	for (unsigned i{ 0 }; i < size; ++i) {
-		variance += std::pow((mean - scores[i]), 2);
+		sum_squared_diff += std::pow((mean - scores[i]), 2);
 	}
-	variance /= ((float)size - 1);
-	return std::sqrt(variance);
+	float stddev = std::sqrt(sum_squared_diff / (float)size - 1);
+	return stddev;
 }
 
-void get_recommendation(float pred_1, float pred_2, float pred_3) {
+void get_recommendation(float pred_1, float pred_2, float pred_3 /*float z_dist_low, float z_dist_high*/) {
 	float avg_points = 0.4f * pred_1 + 0.4f * pred_2 + 0.2f * pred_3;
 	const int max = 7;
 
@@ -141,45 +151,35 @@ int main(int argc, char* argv[]) {
 		while (std::getline(file, match_details) && match_details.size() <= 1) continue;
 
 		//..........................................................................................................................
-
-		float home_h2h_mean = fulltime_mean(home_h2h_scores);
-		float away_h2h_mean = fulltime_mean(away_h2h_scores);
-
 		//Exponential Smoothing
-		float home_exp_pred = exponential_smoothing(home_past_scores) * ((home_h2h_mean == 0.f) ? 1.0 : 0.8) + home_h2h_mean * 0.2;
-		//float home_adaptive_exp_pred = adaptive_exponential_smoothing(home_score);
-		float away_exp_pred = exponential_smoothing(away_past_scores) * ((away_h2h_mean == 0.f) ? 1.0 : 0.8) + away_h2h_mean * 0.2;
-		//float away_adaptive_exp_pred = adaptive_exponential_smoothing(away_score);
+		float home_exp_pred = exponential_smoothing(home_past_scores) * ((home_h2h_scores.size() == 0) ? 1.0 : 0.8) + mean(home_h2h_scores) * 0.2;
+		float away_exp_pred = exponential_smoothing(away_past_scores) * ((away_h2h_scores.size() == 0) ? 1.0 : 0.8) + mean(away_h2h_scores) * 0.2;
 
 		//Simple Linear Regression
-		float home_regression_pred = simple_linear_regression(home_past_scores) * ((home_h2h_mean == 0.f) ? 1.0 : 0.8) + home_h2h_mean * 0.2;
-		float away_regression_pred = simple_linear_regression(away_past_scores) * ((away_h2h_mean == 0.f) ? 1.0 : 0.8) + away_h2h_mean * 0.2;
+		float home_regression_pred = simple_linear_regression(home_past_scores) * ((home_h2h_scores.size() == 0) ? 1.0 : 0.8) + mean(home_h2h_scores) * 0.2;
+		float away_regression_pred = simple_linear_regression(away_past_scores) * ((away_h2h_scores.size() == 0) ? 1.0 : 0.8) + mean(away_h2h_scores) * 0.2;
 
-
-		//Normal distribution calculation
-		float home_mean{ 0.0 }, away_mean{ 0.0 };
-		float home_stddev{ 0.0 }, away_stddev{ 0.0 };
 
 		std::copy(home_h2h_scores.begin(), home_h2h_scores.end(), std::back_inserter(home_past_scores));
 		std::copy(away_h2h_scores.begin(), away_h2h_scores.end(), std::back_inserter(away_past_scores));
 
-		home_mean = fulltime_mean(home_past_scores);
-		home_stddev = standard_deviation(home_past_scores, home_mean);
-		away_mean = fulltime_mean(away_past_scores);
-		away_stddev = standard_deviation(away_past_scores, away_mean);
-
+		float home_mean = mean(home_past_scores);
+		float home_stddev = standard_deviation(home_past_scores, home_mean);
+		float away_mean = mean(away_past_scores);
+		float away_stddev = standard_deviation(away_past_scores, away_mean);
 		float mean_total = home_mean + away_mean;
-		float total_mean_lower_bound = (home_mean - home_stddev) + (away_mean - away_stddev);
-		float total_mean_upper_bound = (home_mean + home_stddev) + (away_mean + away_stddev);
+
+		/*float total_mean_lower_bound = (home_mean - home_stddev) + (away_mean - away_stddev);
+		float total_mean_upper_bound = (home_mean + home_stddev) + (away_mean + away_stddev);*/
+
+
+		//Normal distribution calculation
+		auto [home_zdist_lower, home_zdist_upper] = z_dist(home_past_scores.size(), home_mean, home_stddev);
+		auto [away_zdist_lower, away_zdist_upper] = z_dist(away_past_scores.size(), away_mean, away_stddev);
 
 		//T-distribution calculation
-		float t_upper_bound{ 0.0 }, t_lower_bound{ 0.0 };
-
-		t_dist(home_past_scores, home_mean, home_stddev, &t_lower_bound, &t_upper_bound);
-		float home_tdist_lower{ t_lower_bound }, home_tdist_upper{ t_upper_bound };
-
-		t_dist(away_past_scores, away_mean, away_stddev, &t_lower_bound, &t_upper_bound);
-		float away_tdist_lower{ t_lower_bound }, away_tdist_upper{ t_upper_bound };
+		auto [home_tdist_lower, home_tdist_upper] = t_dist(home_past_scores.size(), home_mean, home_stddev);
+		auto [away_tdist_lower, away_tdist_upper] = t_dist(away_past_scores.size(), away_mean, away_stddev);
 
 		//ARIMA
 		/*double arima_home_pred = predictARIMA(home_score);
@@ -227,7 +227,7 @@ int main(int argc, char* argv[]) {
 		stream << "Home: " << home_mean;
 		printf("%-15s", stream.str().c_str());
 		stream.str("");
-		stream << "(" << home_mean - home_stddev << " - " << home_mean + home_stddev << ")";
+		stream << "(" << home_zdist_lower << " - " << home_zdist_upper << ")";
 		printf("%-25s", stream.str().c_str());
 		stream.str("");
 		stream << "(" << home_tdist_lower<<" - " << home_tdist_upper<<")\n";
@@ -238,7 +238,7 @@ int main(int argc, char* argv[]) {
 		stream << "Away: " << away_mean;
 		printf("%-15s", stream.str().c_str());
 		stream.str("");
-		stream << "(" << away_mean - away_stddev << " - " << away_mean + away_stddev << ")";
+		stream << "(" << away_zdist_lower << " - " << away_zdist_upper << ")";
 		printf("%-25s", stream.str().c_str());
 		stream.str("");
 		stream << "(" << away_tdist_lower << " - " << away_tdist_upper << ")\n";
@@ -249,7 +249,7 @@ int main(int argc, char* argv[]) {
 		stream << "H2H : " << mean_total;
 		printf("%-15s", stream.str().c_str());
 		stream.str("");
-		stream << "(" << total_mean_lower_bound << " - " << total_mean_upper_bound<<")";
+		stream << "(" << home_zdist_lower + away_zdist_lower << " - " << home_zdist_upper + away_zdist_upper <<")";
 		printf("%-25s", stream.str().c_str());
 		stream.str("");
 		stream << "(" << home_tdist_lower + away_tdist_lower << " - " << home_tdist_upper + away_tdist_upper << ")\n\n";

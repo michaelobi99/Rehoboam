@@ -4,6 +4,12 @@
 #include <sstream>
 #include <string>
 
+
+struct TRange {
+	float low;
+	float high;
+};
+
 //t_table[degree_of_freedom][tail_probability]
 float t_table[30][11] = {
 	{0.000, 1.000, 1.376, 1.963, 3.078, 6.314, 12.71, 31.82, 63.66, 318.31, 636.62},
@@ -54,16 +60,18 @@ int getTailProbabilityIndex(std::string confidence_level) {
 	exit(1);
 }
 
-void t_dist(const std::vector<int>& scores, float mean, float stddev, float* lower_bound, float* upper_bound, float confidence_level = 0.95) {
-	unsigned degrees_of_freedom = (unsigned)(scores.size() - 1);
+TRange t_dist(size_t n, float mean, float stddev, float confidence_level = 0.95) {
+	unsigned degrees_of_freedom = (n - 1);
 	if (degrees_of_freedom > 29) {
 		printf("Error: Number of samples exceed optimal number for t-distribution");
 		exit(1);
 	}
+	TRange range;
 	std::string string = std::to_string(confidence_level);
 	std::string conf_as_str = string + ((string.size() >= 5) ? "" : std::string(5 - string.size(), '0'));
 	float critical_value = t_table[degrees_of_freedom][getTailProbabilityIndex(conf_as_str)];
-	float margin_of_error = stddev / (float)(sqrt(scores.size()));
-	*lower_bound = mean - (critical_value * margin_of_error);
-	*upper_bound = mean + (critical_value * margin_of_error);
+	float margin_of_error = stddev / (float)(sqrt(n));
+	range.low = mean - (critical_value * margin_of_error);
+	range.high = mean + (critical_value * margin_of_error);
+	return range;
 }
