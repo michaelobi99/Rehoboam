@@ -47,8 +47,8 @@ def get_exact(league_name):
     if league_name == "Premier League": return "PL"
     if league_name == "Premier League Women": return "PRE"
     if league_name == "Prva Liga": return "PL"
-    if league_name == "Pro B": return "PB"
-    # if league_name == "Pro B": return "PROB"
+    # if league_name == "Pro B": return "PB"
+    if league_name == "Pro B": return "PROB"
     if league_name == "Pro A": return "PA"
     if league_name == "Super League": return "SL"
     if league_name == "Super Lig": return "SL"
@@ -56,8 +56,10 @@ def get_exact(league_name):
     if league_name == "First League": return "FL"
     if league_name == "Basket Liga": return "BL"
     if league_name == "Basket League": return "BL"
+    if league_name == "SB League": return "SBL"
     if league_name == "Basketligan": return "LIG"
     if league_name == "Liga A": return "LA"
+    if league_name == "Liga Uruguaya": return "LC"
     if league_name == "Superliga": return "ABL"
     if league_name == "NB I. A": return "NBI"
     if league_name == "Lega A": return "LA"
@@ -65,9 +67,10 @@ def get_exact(league_name):
     if league_name == "BNXT League": return "BNXT"
     if league_name == "Champions League - Winners stage": return "CHL"
     # if league_name == "Champions League": return "CHL"
-    if league_name == "1. Liga": return "1L"
+    if league_name == "1. Liga": return "1.L"
     if league_name == "Korisliiga - Losers stage": return "KOR"
     if league_name == "Korisliiga - Winners stage": return "KOR"
+    if league_name == "Primera FEB": return "PF"
     return league_name
 
 
@@ -84,8 +87,9 @@ def is_desired_league(game_element):
 
         desired_leagues = [
                             # 'ACB', #Spain
+                            # 'Primera FEB',
                             # 'SLB', #UK
-                            'NBA' #USA
+                            # 'NBA', #USA
                             # 'NCAA', #USA
                             # 'NCAA Women', #USA
                             # 'WNBA', #USA
@@ -93,6 +97,7 @@ def is_desired_league(game_element):
                             # 'WCBA Women', #China
                             # 'NBB', #Brasil
                             # 'Liga A', #Argentina
+                            # 'Liga Uruguaya', #Uruguay
                             # 'BBL', #Germany
                             # 'LNB', #France
                             # 'Pro B', #France, Germany
@@ -117,18 +122,25 @@ def is_desired_league(game_element):
                             # 'WBL Women', #Isreal women
                             # 'Superliga', #Austria
                             # 'BLNO', #Norway
+                            # 'SB League', #Switzerland
                             # 'LPB', #Portugal
-                            # 'NBL', #Bulgaria czech and Austrailia         
-                            # 'Prva Liga' #Croatia and Macedonia
+                            # 'NBL', #Bulgaria, czech and Austrailia
+                            # 'NBL - Losers stage',         
+                            # 'NBL - Winners stage',         
+                            # 'Prva Liga', #Croatia and Macedonia
                             # 'LKL', #Lithuania
                             # 'NKL', #Lithuania
+                            # 'NKL - Winners stage', #Lithuania
+                            # 'NKL - Losers stage', #Lithuania
                             # 'Premijer liga', #Croatia
                             # 'First League', #Serbia  
-                            # 'KBL', #Korea
+                            # 'Division A', #Cyprus
+                            # 'KBL' #Korea
                             # 'WKBL Women', #Korea
                             # 'Extraliga', #Slovakia
                             # 'Basket Liga', #Poland
-                            # '1. Liga', #Czech
+                            # 'Divizia A', #Romania
+                            # '1. Liga' #Czech, Poland
                             # 'Super Lig' #Turkey
 
 
@@ -139,8 +151,6 @@ def is_desired_league(game_element):
                             # 'Liga OTP banka', 
                             # 'Premier League Women', 
                             # 'WABA League Women', 
-                            # 'NCAA Women', 
-                            # 'Division A', 
                             # 'EuroCup Women - Play Offs', 
                             # 'Czech Cup', 
                             # 'FIBA Europe Cup - Second stage', 
@@ -316,58 +326,65 @@ def main():
         file2 = r"C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\random1.txt"
 
         #file1_leagues = ["NBA", "WNBA", "NCAA", "NCAA Women", "KBL", "LA", "NBB"]
-        file1_countries = ["USA", "ARGENTINA", "BRAZIL", "AUSTRAILIA", "SOUTH KOREA"]
+        file1_countries = ["USA", "ARGENTINA", "BRAZIL", "URUGUAY", "AUSTRALIA", "SOUTH KOREA"]
 
         # For each upcoming game, get last 15 scores and H2H
+        last_saved = -1
         for number, game in enumerate(upcoming):
-            print(f'{number+1}/{number_of_games}', '\r', end = '')
-            #Filter only alphabets
-            home_team = game['home']
-            away_team = game['away']
-            country   = game['country']
-            league    = game['league']
-            game_time = game['time']
+            if number > last_saved:
+                print(f'{number+1}/{number_of_games}', '\r', end = '')
+                #Filter only alphabets
+                home_team = game['home']
+                away_team = game['away']
+                country   = game['country']
+                league    = game['league']
+                game_time = game['time']
 
-            home_score = []
-            away_score = []
+                home_score = []
+                away_score = []
 
-            results = scrape_h2h_page(driver, game['link'], league)
+                results = scrape_h2h_page(driver, game['link'], league)
 
-            for match in results['home_matches']:
-                score = match['score'].strip().split()
-                if home_team == match['home']:
-                    home_score.append(score[0])
-                else:
-                    home_score.append(score[1])
+                for match in results['home_matches']:
+                    score = match['score'].strip().split()
+                    if home_team == match['home']:
+                        home_score.append(score[0])
+                    else:
+                        home_score.append(score[1])
 
-            for match in results['away_matches']:
-                score = match['score'].strip().split()
-                if away_team == match['home']:
-                    away_score.append(score[0])
-                else:
-                    away_score.append(score[1])
-
-            for match in results['h2h_matches']:
-                score = match['score'].strip().split()
-                if home_team == match['home']:
-                    home_score.append(score[0])
-                    away_score.append(score[1]) 
-                else:
-                    home_score.append(score[1])
-                    away_score.append(score[0])
+                for match in results['away_matches']:
+                    score = match['score'].strip().split()
+                    if away_team == match['home']:
+                        away_score.append(score[0])
+                    else:
+                        away_score.append(score[1])
 
             
-            file = file1 if country in file1_countries  else file2
+                if league != 'NCAA':
+                    #separator for past games and h2h games
+                    home_score.append(':')
+                    away_score.append(':')
+                    for match in results['h2h_matches']:
+                        score = match['score'].strip().split()
+                        if home_team == match['home']:
+                            home_score.append(score[0])
+                            away_score.append(score[1]) 
+                        else:
+                            home_score.append(score[1])
+                            away_score.append(score[0])
 
-            with open(file, 'a') as fileObj:
-                fileObj.write(f'{home_team}: ')
-                fileObj.write(' '.join(str(num) for num in home_score))
-                fileObj.write('\n')
-                fileObj.write(f'{away_team}: ')
-                fileObj.write(' '.join(str(num) for num in away_score))
-                fileObj.write('\n')
-                fileObj.write(f'({country}, {league}, {game_time})\n\n')
-            time.sleep(3)
+                
+                file = file1 if country in file1_countries  else file2
+
+                with open(file, 'a') as fileObj:
+                    fileObj.write(f'{home_team}: ')
+                    fileObj.write(' '.join(str(num) for num in home_score))
+                    fileObj.write('\n')
+                    fileObj.write(f'{away_team}: ')
+                    fileObj.write(' '.join(str(num) for num in away_score))
+                    fileObj.write('\n')
+                    fileObj.write(f'({country}, {league}, {game_time})\n\n')
+                time.sleep(3)
              
     except Exception as e:
         print(f"Error in main: {e}")
