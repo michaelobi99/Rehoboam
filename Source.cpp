@@ -98,10 +98,40 @@ float standard_deviation(const std::vector<int>& scores, float mean) {
 	return stddev;
 }
 
-void get_recommendation(float pred_1, float pred_2, float pred_3 /*float z_dist_low, float z_dist_high*/) {
-	float avg_points = 0.4f * pred_1 + 0.4f * pred_2 + 0.2f * pred_3;
-	const int max = 7;
+void get_recommendation(float pred_1, float pred_2, float pred_3, float low, float high) {
+	/*float diff = std::ceil(high - low);
 
+
+	float weight_1 = 0.0, weight_2 = 0.0;
+	if (diff <= 15.f) weight_1 += 0.5;
+	else if (diff <= 25.f) weight_1 += 0.3;
+	else weight_1 += 0.0;
+
+	const int max = 7;
+	if (std::abs(pred_1 - pred_2) < max && std::abs(pred_1 - pred_3) < max && std::abs(pred_2 - pred_3) < max) {
+		weight_2 += 0.5;
+	}
+	else if ((std::abs(pred_1 - pred_2) > max && std::abs(pred_1 - pred_3) < max && std::abs(pred_2 - pred_3) < max) ||
+		(std::abs(pred_1 - pred_2) < max && std::abs(pred_1 - pred_3) > max && std::abs(pred_2 - pred_3) < max) ||
+		(std::abs(pred_1 - pred_2) < max && std::abs(pred_1 - pred_3) < max && std::abs(pred_2 - pred_3) > max)) {
+		weight_2 += 0.3;
+	}
+	else weight_2 += 0.0;
+
+	float result = weight_1 + weight_2;
+	float avg_points = 0.3f * pred_1 + 0.4f * pred_2 + 0.3f * pred_3;
+
+	if (result >= 0.8) {
+		printf("RECOMMENDATION: High confidence in interval - Expect about %.2f total points.\n\n", avg_points);
+	}
+	else if (result >= 0.5) {
+		printf("RECOMMENDATION: Mid confidence in interval - Expect about %.2f total points.\n\n", avg_points);
+	}
+	else{
+		printf("RECOMMENDATION: Low confidence in interval - Express caution\n\n");
+	}*/
+	const int max = 7;
+	float avg_points = 0.3f * pred_1 + 0.4f * pred_2 + 0.3f * pred_3;
 	if (std::abs(pred_1 - pred_2) < max && std::abs(pred_1 - pred_3) < max && std::abs(pred_2 - pred_3) < max) {
 		printf("RECOMMENDATION: High confidence - Expect about %.2f total points.\n\n", avg_points);
 	}
@@ -173,13 +203,21 @@ int main(int argc, char* argv[]) {
 		float total_mean_upper_bound = (home_mean + home_stddev) + (away_mean + away_stddev);*/
 
 
-		//Normal distribution calculation
-		auto [home_zdist_lower, home_zdist_upper] = z_dist(home_past_scores.size(), home_mean, home_stddev);
-		auto [away_zdist_lower, away_zdist_upper] = z_dist(away_past_scores.size(), away_mean, away_stddev);
 
-		//T-distribution calculation
-		auto [home_tdist_lower, home_tdist_upper] = t_dist(home_past_scores.size(), home_mean, home_stddev);
-		auto [away_tdist_lower, away_tdist_upper] = t_dist(away_past_scores.size(), away_mean, away_stddev);
+		float home_lower{ 0 }, away_lower{ 0 };
+		float home_upper{ 0 }, away_upper{ 0 };
+
+		if (home_past_scores.size() > 30 || away_past_scores.size() > 30) {
+			//Normal distribution calculation
+			std::tie(home_lower, home_upper) = z_dist(home_past_scores.size(), home_mean, home_stddev);
+			std::tie(away_lower, away_upper) = z_dist(away_past_scores.size(), away_mean, away_stddev);
+		}
+		else {
+			//T-distribution calculation
+			std::tie(home_lower, home_upper) = t_dist(home_past_scores.size(), home_mean, home_stddev);
+			std::tie(away_lower, away_upper) = t_dist(away_past_scores.size(), away_mean, away_stddev);
+		}
+		
 
 		//ARIMA
 		/*double arima_home_pred = predictARIMA(home_score);
@@ -219,45 +257,36 @@ int main(int argc, char* argv[]) {
 		std::cout << match_string <<" - " << match_details << "\n";
 		std::cout << design << "\n";
 
-		const char* str1 = "Z-Distribution";
-		const char* str2 = "T-Distribution";
-		std::cout << std::setw(30) << std::right << str1 << std::setw(25) << std::right << str2 << "\n";
+		const char* str1 = "Likely Score Range";
+		std::cout << std::setw(38) << std::right << str1 << "\n";
 		
 		//Home
 		stream << "Home: " << home_mean;
-		printf("%-15s", stream.str().c_str());
+		printf("%-20s", stream.str().c_str());
 		stream.str("");
-		stream << "(" << home_zdist_lower << " - " << home_zdist_upper << ")";
-		printf("%-25s", stream.str().c_str());
-		stream.str("");
-		stream << "(" << home_tdist_lower<<" - " << home_tdist_upper<<")\n";
-		printf("%s", stream.str().c_str());
+		stream << "(" << home_lower << " - " << home_upper << ")";
+		printf("%s\n", stream.str().c_str());
 		stream.str("");
 
 		//Away
 		stream << "Away: " << away_mean;
-		printf("%-15s", stream.str().c_str());
+		printf("%-20s", stream.str().c_str());
 		stream.str("");
-		stream << "(" << away_zdist_lower << " - " << away_zdist_upper << ")";
-		printf("%-25s", stream.str().c_str());
+		stream << "(" << away_lower << " - " << away_upper << ")";
+		printf("%s\n", stream.str().c_str());
 		stream.str("");
-		stream << "(" << away_tdist_lower << " - " << away_tdist_upper << ")\n";
-		printf("%s", stream.str().c_str());
-		stream.str("");
+	
 
 		//H2H
 		stream << "H2H : " << mean_total;
-		printf("%-15s", stream.str().c_str());
+		printf("%-20s", stream.str().c_str());
 		stream.str("");
-		stream << "(" << home_zdist_lower + away_zdist_lower << " - " << home_zdist_upper + away_zdist_upper <<")";
-		printf("%-25s", stream.str().c_str());
+		stream << "(" << home_lower + away_lower << " - " << home_upper + away_upper <<")";
+		printf("%s\n\n", stream.str().c_str());
 		stream.str("");
-		stream << "(" << home_tdist_lower + away_tdist_lower << " - " << home_tdist_upper + away_tdist_upper << ")\n\n";
 
 		stream << "Exponential smoothing\n";
-		stream << "Home : " << home_exp_pred
-			<< "\nAway : " << away_exp_pred
-			<< "\nTotal: " << home_exp_pred + away_exp_pred << "\n\n";
+		stream << "Home : " << home_exp_pred << "\nAway : " << away_exp_pred << "\nTotal: " << home_exp_pred + away_exp_pred << "\n\n";
 
 		stream << "Linear regression\n";
 		stream << "Home : " << home_regression_pred << "\nAway : " << away_regression_pred << "\nTotal: " << home_regression_pred + away_regression_pred << "\n\n";
@@ -268,7 +297,7 @@ int main(int argc, char* argv[]) {
 
 
 		printf("%s", stream.str().c_str());
-		get_recommendation(home_mean + away_mean, home_exp_pred + away_exp_pred, home_regression_pred + away_regression_pred);
+		get_recommendation(home_mean + away_mean, home_exp_pred + away_exp_pred, home_regression_pred + away_regression_pred, home_lower + away_lower, home_upper + away_upper);
 
 		stream.str("");
 		stream.clear();

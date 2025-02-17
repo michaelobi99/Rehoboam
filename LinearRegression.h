@@ -2,7 +2,8 @@
 #include <vector>
 
 float simple_linear_regression(const std::vector<int>& scores) {
-    if (scores.size() < 2) return 0;
+    if (scores.empty()) return 0;
+    if (scores.size() < 2) return scores[0];
 
     int N = scores.size() - 1; // One less for pairs of (x,y)
     std::vector<int> x(scores.rbegin(), scores.rend() - 1); // previous scores

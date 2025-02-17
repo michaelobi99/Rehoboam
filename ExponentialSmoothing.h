@@ -4,10 +4,10 @@
 #define SMOOTHING_FACTOR 0.3
 
 float exponential_smoothing(const std::vector<int>& scores) {
-	std::vector<int> scores_reversed(std::rbegin(scores), std::rend(scores));
 	if (scores.size() == 0) return 0;
+	std::vector<int> scores_reversed(std::rbegin(scores), std::rend(scores));
 	int N = scores_reversed.size();
-	float current_smoothed_value{ 0.0 }, current_value{ 0.0 }, previous_smoothed_value{ 0.0 };
+	float current_smoothed_value{ 0.0 }, previous_smoothed_value{ 0.0 };
 	previous_smoothed_value = scores_reversed[0];
 	for (int i = 1; i < N; ++i) {
 		current_smoothed_value = SMOOTHING_FACTOR * scores[i] + (1 - SMOOTHING_FACTOR) * previous_smoothed_value;
