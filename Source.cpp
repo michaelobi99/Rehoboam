@@ -130,10 +130,16 @@ void get_recommendation(float pred_1, float pred_2, float pred_3, float low, flo
 	else{
 		printf("RECOMMENDATION: Low confidence in interval - Express caution\n\n");
 	}*/
-	const int max = 7;
+	const int max_pred_diff = 10;
+	const int max_dist_range = 20;
 	float avg_points = 0.3f * pred_1 + 0.4f * pred_2 + 0.3f * pred_3;
-	if (std::abs(pred_1 - pred_2) < max && std::abs(pred_1 - pred_3) < max && std::abs(pred_2 - pred_3) < max) {
-		printf("RECOMMENDATION: High confidence - Expect about %.2f total points.\n\n", avg_points);
+	bool close_prediction = std::abs(pred_1 - pred_2) < max_pred_diff && std::abs(pred_1 - pred_3) < max_pred_diff && std::abs(pred_2 - pred_3) < max_pred_diff;
+	int diff = (int)(high - low);
+	if (close_prediction) {
+		if (diff <= max_dist_range)
+			printf("RECOMMENDATION: Very high confidence - Expect about %.2f total points.\n\n", avg_points);
+		else
+			printf("RECOMMENDATION: High confidence - Expect about %.2f total points.\n\n", avg_points);
 	}
 	else {
 		printf("RECOMMENDATION: Low confidence - Expect about %.2f total points.\n\n", avg_points);
@@ -182,12 +188,12 @@ int main(int argc, char* argv[]) {
 
 		//..........................................................................................................................
 		//Exponential Smoothing
-		float home_exp_pred = exponential_smoothing(home_past_scores) * ((home_h2h_scores.size() == 0) ? 1.0 : 0.8) + mean(home_h2h_scores) * 0.2;
-		float away_exp_pred = exponential_smoothing(away_past_scores) * ((away_h2h_scores.size() == 0) ? 1.0 : 0.8) + mean(away_h2h_scores) * 0.2;
+		float home_exp_pred = exponential_smoothing(home_past_scores) * ((home_h2h_scores.size() == 0) ? 1.0 : 0.6) + mean(home_h2h_scores) * 0.4;
+		float away_exp_pred = exponential_smoothing(away_past_scores) * ((away_h2h_scores.size() == 0) ? 1.0 : 0.6) + mean(away_h2h_scores) * 0.4;
 
 		//Simple Linear Regression
-		float home_regression_pred = simple_linear_regression(home_past_scores) * ((home_h2h_scores.size() == 0) ? 1.0 : 0.8) + mean(home_h2h_scores) * 0.2;
-		float away_regression_pred = simple_linear_regression(away_past_scores) * ((away_h2h_scores.size() == 0) ? 1.0 : 0.8) + mean(away_h2h_scores) * 0.2;
+		float home_regression_pred = simple_linear_regression(home_past_scores) * ((home_h2h_scores.size() == 0) ? 1.0 : 0.6) + mean(home_h2h_scores) * 0.4;
+		float away_regression_pred = simple_linear_regression(away_past_scores) * ((away_h2h_scores.size() == 0) ? 1.0 : 0.6) + mean(away_h2h_scores) * 0.4;
 
 
 		std::copy(home_h2h_scores.begin(), home_h2h_scores.end(), std::back_inserter(home_past_scores));
