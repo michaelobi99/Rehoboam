@@ -99,37 +99,6 @@ float standard_deviation(const std::vector<int>& scores, float mean) {
 }
 
 void get_recommendation(float pred_1, float pred_2, float pred_3, float low, float high) {
-	/*float diff = std::ceil(high - low);
-
-
-	float weight_1 = 0.0, weight_2 = 0.0;
-	if (diff <= 15.f) weight_1 += 0.5;
-	else if (diff <= 25.f) weight_1 += 0.3;
-	else weight_1 += 0.0;
-
-	const int max = 7;
-	if (std::abs(pred_1 - pred_2) < max && std::abs(pred_1 - pred_3) < max && std::abs(pred_2 - pred_3) < max) {
-		weight_2 += 0.5;
-	}
-	else if ((std::abs(pred_1 - pred_2) > max && std::abs(pred_1 - pred_3) < max && std::abs(pred_2 - pred_3) < max) ||
-		(std::abs(pred_1 - pred_2) < max && std::abs(pred_1 - pred_3) > max && std::abs(pred_2 - pred_3) < max) ||
-		(std::abs(pred_1 - pred_2) < max && std::abs(pred_1 - pred_3) < max && std::abs(pred_2 - pred_3) > max)) {
-		weight_2 += 0.3;
-	}
-	else weight_2 += 0.0;
-
-	float result = weight_1 + weight_2;
-	float avg_points = 0.3f * pred_1 + 0.4f * pred_2 + 0.3f * pred_3;
-
-	if (result >= 0.8) {
-		printf("RECOMMENDATION: High confidence in interval - Expect about %.2f total points.\n\n", avg_points);
-	}
-	else if (result >= 0.5) {
-		printf("RECOMMENDATION: Mid confidence in interval - Expect about %.2f total points.\n\n", avg_points);
-	}
-	else{
-		printf("RECOMMENDATION: Low confidence in interval - Express caution\n\n");
-	}*/
 	const int max_pred_diff = 10;
 	const int max_dist_range = 20;
 	float avg_points = 0.3f * pred_1 + 0.4f * pred_2 + 0.3f * pred_3;
@@ -149,7 +118,7 @@ void get_recommendation(float pred_1, float pred_2, float pred_3, float low, flo
 
 int main(int argc, char* argv[]) {
 	//only basketball is currently supported.
-	//Future sports include, Tennis, Baseball, Hockey and Football.
+	//Future sports include, Tennis, Baseball, Hockey and Football.-[;
 	if (argc < 2) {
 		printf("Usage: Rehoboam [filename]\n");
 		exit(1);
