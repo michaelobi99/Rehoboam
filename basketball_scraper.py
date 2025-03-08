@@ -51,6 +51,7 @@ def get_exact(league_name):
     if league_name == "Pro B": return "PROB"
     if league_name == "Pro A": return "PA"
     if league_name == "Super League": return "SL"
+    if league_name == "Liga Leumit": return "LL"
     if league_name == "Super Lig": return "SL"
     if league_name == "Premijer liga": return "A1"
     if league_name == "First League": return "FL"
@@ -71,6 +72,7 @@ def get_exact(league_name):
     if league_name == "Korisliiga - Losers stage": return "KOR"
     if league_name == "Korisliiga - Winners stage": return "KOR"
     if league_name == "Primera FEB": return "PF"
+    if league_name == "EuroBasket - Qualification - Fourth round": return "EB"
     return league_name
 
 
@@ -95,32 +97,39 @@ def is_desired_league(game_element):
                             # 'WNBA', #USA
                             # 'CBA', #China         
                             # 'WCBA Women', #China
-                            # 'NBB', #Brasil
+                            # 'WCBA Women - Play Offs', #China
+                            # 'NBB', #Brazil
                             # 'Liga A', #Argentina
                             # 'Liga Uruguaya', #Uruguay
                             # 'BBL', #Germany
-                            # 'LNB', #France
+                            # 'LNB', #France, Chile
                             # 'Pro B', #France, Germany
                             # 'Pro A', #Germany
                             # 'Lega A', #Italy
                             # 'NB I. A', #Hungary
                             # 'Eurocup', 
+                            'Eurocup - Play Offs', 
                             # 'ABA League',
                             # 'BNXT League',
                             # 'Euroleague',
                             # 'Champions League',
                             # 'Champions League - Winners stage',
+                            # 'EuroBasket - Qualification - Fourth round',
                             # 'Korisliiga', #Finland  
                             # 'Korisliiga - Losers stage',
                             # 'Korisliiga - Winners stage',
                             # 'Basketligaen', #Denmark
+                            # 'Basketligaen - Losers stage', #Denmark
                             # 'Basket League', #Greece
                             # 'Basketligan', #Sweden
                             # 'Premier League', #Iceland or Saudi Arabia
                             # 'Premier League Women', #Iceland
                             # 'Super League', #Isreal #Russia
+                            # 'Liga Leumit', #Isreal
                             # 'WBL Women', #Isreal women
                             # 'Superliga', #Austria
+                            # 'Superliga - Losers stage', #Austria
+                            # 'Superliga - Winners stage', #Austria
                             # 'BLNO', #Norway
                             # 'SB League', #Switzerland
                             # 'LPB', #Portugal
@@ -135,12 +144,12 @@ def is_desired_league(game_element):
                             # 'Premijer liga', #Croatia
                             # 'First League', #Serbia  
                             # 'Division A', #Cyprus
-                            # 'KBL' #Korea
-                            # 'WKBL Women', #Korea
+                            # 'KBL', #Korea
+                            # 'WKBL Women' #Korea
                             # 'Extraliga', #Slovakia
                             # 'Basket Liga', #Poland
                             # 'Divizia A', #Romania
-                            # '1. Liga' #Czech, Poland
+                            # '1. Liga', #Czech, Poland
                             # 'Super Lig' #Turkey
 
 
@@ -313,7 +322,7 @@ def scrape_h2h_page(driver, url, league):
 
 def main():
     # 0 for today, 1 for next day games
-    day = 1
+    day = 0
     
     driver = setup_driver()
     try:
@@ -322,14 +331,14 @@ def main():
 
         number_of_games = len(upcoming)
 
-        file1 = r"C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\NBA1.txt"
-        file2 = r"C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\random1.txt"
+        file1 = r"C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\Basketball\NBA1.txt"
+        file2 = r"C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\Basketball\random1.txt"
 
         #file1_leagues = ["NBA", "WNBA", "NCAA", "NCAA Women", "KBL", "LA", "NBB"]
-        file1_countries = ["USA", "ARGENTINA", "BRAZIL", "URUGUAY", "AUSTRALIA", "SOUTH KOREA"]
+        file1_countries = ["USA", "ARGENTINA", "BRAZIL", "CHILE", "CHINA", "URUGUAY", "AUSTRALIA", "SOUTH KOREA"]
 
         # For each upcoming game, get last 15 scores and H2H
-        last_saved = -1
+        last_saved = -1 #default value should be -1
         for number, game in enumerate(upcoming):
             if number > last_saved:
                 print(f'{number+1}/{number_of_games}', '\r', end = '')

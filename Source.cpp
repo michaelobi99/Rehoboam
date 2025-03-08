@@ -17,15 +17,6 @@
 #endif // _MSC_VER
 
 
-#define HIGH_LEAGUE_RANGE 50
-#define MID_LEAGUE_RANGE 45
-#define LOW_LEAGUE_RANGE  40
-
-const std::vector<std::string> HIGH_SCORING_LEAGUES = { "NBA", "CBA" };
-const std::vector<std::string> MID_SCORING_LEAGUES = { "NBL" };
-
-
-
 std::string trim(const std::string& str) {
 	auto start = std::find_if_not(str.begin(), str.end(), [](unsigned char ch) {
 		return std::isspace(ch);
@@ -103,15 +94,18 @@ void get_recommendation(float pred_1, float pred_2, float pred_3, float low, flo
 	const int max_dist_range = 20;
 	float avg_points = 0.3f * pred_1 + 0.4f * pred_2 + 0.3f * pred_3;
 	bool close_prediction = std::abs(pred_1 - pred_2) < max_pred_diff && std::abs(pred_1 - pred_3) < max_pred_diff && std::abs(pred_2 - pred_3) < max_pred_diff;
-	int diff = (int)(high - low);
-	if (close_prediction) {
-		if (diff <= max_dist_range)
-			printf("RECOMMENDATION: Very high confidence - Expect about %.2f total points.\n\n", avg_points);
-		else
-			printf("RECOMMENDATION: High confidence - Expect about %.2f total points.\n\n", avg_points);
+	bool tight_range = (int)(high - low) <= max_dist_range;
+	if (close_prediction && tight_range) {
+		printf("RECOMMENDATION: Very high confidence - (close predictions, tight range) Expect about %.2f total points.\n\n", avg_points);
+	}
+	else if (close_prediction && !tight_range) {
+		printf("RECOMMENDATION: High confidence - (close predictions, wide range) Expect about %.2f total points.\n\n", avg_points);
+	}
+	else if (!close_prediction && tight_range) {
+		printf("RECOMMENDATION: High confidence - (tight range, wide predictions) Expect about %.2f total points.\n\n", avg_points);
 	}
 	else {
-		printf("RECOMMENDATION: Low confidence - Expect about %.2f total points.\n\n", avg_points);
+		printf("RECOMMENDATION: Low confidence - (wide predictions, wide range) Expect about %.2f total points.\n\n", avg_points);
 	}
 }
 
@@ -173,11 +167,6 @@ int main(int argc, char* argv[]) {
 		float away_mean = mean(away_past_scores);
 		float away_stddev = standard_deviation(away_past_scores, away_mean);
 		float mean_total = home_mean + away_mean;
-
-		/*float total_mean_lower_bound = (home_mean - home_stddev) + (away_mean - away_stddev);
-		float total_mean_upper_bound = (home_mean + home_stddev) + (away_mean + away_stddev);*/
-
-
 
 		float home_lower{ 0 }, away_lower{ 0 };
 		float home_upper{ 0 }, away_upper{ 0 };
