@@ -102,7 +102,7 @@ void get_recommendation(float pred_1, float pred_2, float pred_3, float low, flo
 		printf("RECOMMENDATION: High confidence - (close predictions, wide range) Expect about %.2f total points.\n\n", avg_points);
 	}
 	else if (!close_prediction && tight_range) {
-		printf("RECOMMENDATION: High confidence - (tight range, wide predictions) Expect about %.2f total points.\n\n", avg_points);
+		printf("RECOMMENDATION: High confidence - (wide predictions, tight range) Expect about %.2f total points.\n\n", avg_points);
 	}
 	else {
 		printf("RECOMMENDATION: Low confidence - (wide predictions, wide range) Expect about %.2f total points.\n\n", avg_points);
