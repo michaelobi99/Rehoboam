@@ -1,5 +1,5 @@
 x64/
-/Data
+Data/
 *.user
 *.filters
 *.vcxproj
