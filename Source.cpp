@@ -1,5 +1,6 @@
 
 #include "Basketball/bb_file_reader.h"
+#include "Tennis/tennis_file_reader.h"
 
 
 
@@ -14,13 +15,11 @@ int main(int argc, char* argv[]) {
 
 	const char* file_path = argv[2];
 	std::string sport = argv[1];
-	std::cout << "sport = " << sport << "\n";
-	std::cout << "length = " << sport.length() << "\n";
 	if (sport == "b") {
 		process_basketball_file(file_path);
 	}
 	else if (sport == "t") {
-		//process_tennis_file(file_path)
+		process_tennis_file(file_path);
 	}
 	else{
 		printf("Sport unrecognized\n");

@@ -8,7 +8,7 @@
 
 #ifdef _MSC_VER
 #include <Windows.h>
-#endif // _MSC_VER
+#endif
 
 
 
@@ -21,7 +21,7 @@ std::string trim(const std::string& str) {
 		return std::isspace(ch);
 		}).base();
 
-		return (start < end) ? std::string(start, end) : "";
+	return (start < end) ? std::string(start, end) : "";
 }
 
 
@@ -64,24 +64,20 @@ std::tuple<std::string, std::vector<int>, std::vector<int>> split_string(const c
 }
 
 
-void get_recommendation(float pred_1, float pred_2, float pred_3, float low, float high) {
-	const int max_pred_diff = 10;
-	const int max_dist_range = 20;
-	float avg_points = 0.3f * pred_1 + 0.4f * pred_2 + 0.3f * pred_3;
-	bool close_prediction = std::abs(pred_1 - pred_2) < max_pred_diff && std::abs(pred_1 - pred_3) < max_pred_diff && std::abs(pred_2 - pred_3) < max_pred_diff;
+void get_recommendation(float pred, float low, float high) {
+	const int max_dist_range = 25;
+	bool good_pred = low <= pred && pred <= high;
 	bool tight_range = (int)(high - low) <= max_dist_range;
-	if (close_prediction && tight_range) {
-		printf("RECOMMENDATION: Very high confidence - (close predictions, tight range) Expect about %.2f total points.\n\n", avg_points);
-	}
-	else if (close_prediction && !tight_range) {
-		printf("RECOMMENDATION: High confidence - (close predictions, wide range) Expect about %.2f total points.\n\n", avg_points);
-	}
-	else if (!close_prediction && tight_range) {
-		printf("RECOMMENDATION: High confidence - (wide predictions, tight range) Expect about %.2f total points.\n\n", avg_points);
+	if (good_pred && tight_range) {
+		printf("CONFIDENCE: HIGH\n\n");
 	}
 	else {
-		printf("RECOMMENDATION: Low confidence - (wide predictions, wide range) Expect about %.2f total points.\n\n", avg_points);
+		printf("CONFIDENCE: LOW\n\n");
 	}
+}
+
+float combine_predictions(float pred_1, float pred_2, float pred_3) {
+	return 0.3f * pred_1 + 0.4f * pred_2 + 0.3f * pred_3;
 }
 
 
@@ -119,16 +115,12 @@ void process_basketball_file(std::string const& file_path) {
 
 		//..........................................................................................................................
 		//Exponential Smoothing
-		float home_exp_pred = exponential_smoothing(home_past_scores) * ((home_h2h_scores.size() == 0) ? 1.0 : 0.6) + mean(home_h2h_scores) * 0.4;
-		float away_exp_pred = exponential_smoothing(away_past_scores) * ((away_h2h_scores.size() == 0) ? 1.0 : 0.6) + mean(away_h2h_scores) * 0.4;
+		float home_exp_pred = exponential_smoothing(home_past_scores);
+		float away_exp_pred = exponential_smoothing(away_past_scores);
 
 		//Simple Linear Regression
-		float home_regression_pred = simple_linear_regression(home_past_scores) * ((home_h2h_scores.size() == 0) ? 1.0 : 0.6) + mean(home_h2h_scores) * 0.4;
-		float away_regression_pred = simple_linear_regression(away_past_scores) * ((away_h2h_scores.size() == 0) ? 1.0 : 0.6) + mean(away_h2h_scores) * 0.4;
-
-
-		std::copy(home_h2h_scores.begin(), home_h2h_scores.end(), std::back_inserter(home_past_scores));
-		std::copy(away_h2h_scores.begin(), away_h2h_scores.end(), std::back_inserter(away_past_scores));
+		float home_regression_pred = simple_linear_regression(home_past_scores);
+		float away_regression_pred = simple_linear_regression(away_past_scores);
 
 		float home_mean = mean(home_past_scores);
 		float home_stddev = standard_deviation(home_past_scores, home_mean);
@@ -189,46 +181,46 @@ void process_basketball_file(std::string const& file_path) {
 		std::cout << match_string << " - " << match_details << "\n";
 		std::cout << design << "\n";
 
-		const char* str1 = "Likely Score Range";
-		std::cout << std::setw(38) << std::right << str1 << "\n";
+		const char* str1 = "Point range";
+		std::cout << std::setw(25) << std::right << str1 << "\n";
 
 		//Home
-		stream << "Home: " << home_mean;
-		printf("%-20s", stream.str().c_str());
+		stream << "Home: ";
+		printf("%-10s", stream.str().c_str());
 		stream.str("");
 		stream << "(" << home_lower << " - " << home_upper << ")";
 		printf("%s\n", stream.str().c_str());
 		stream.str("");
 
 		//Away
-		stream << "Away: " << away_mean;
-		printf("%-20s", stream.str().c_str());
+		stream << "Away: ";
+		printf("%-10s", stream.str().c_str());
 		stream.str("");
 		stream << "(" << away_lower << " - " << away_upper << ")";
 		printf("%s\n", stream.str().c_str());
 		stream.str("");
 
-
 		//H2H
-		stream << "H2H : " << mean_total;
-		printf("%-20s", stream.str().c_str());
+		stream << "H2H : ";
+		printf("%-10s", stream.str().c_str());
 		stream.str("");
 		stream << "(" << home_lower + away_lower << " - " << home_upper + away_upper << ")";
 		printf("%s\n\n", stream.str().c_str());
 		stream.str("");
 
-		stream << "Exponential smoothing\n";
-		stream << "Home : " << home_exp_pred << "\nAway : " << away_exp_pred << "\nTotal: " << home_exp_pred + away_exp_pred << "\n\n";
-
-		stream << "Linear regression\n";
-		stream << "Home : " << home_regression_pred << "\nAway : " << away_regression_pred << "\nTotal: " << home_regression_pred + away_regression_pred << "\n\n";
-
-
-		/*stream << "ARIMA\n";
-		stream << "Home : " << arima_home_pred << "\nAway : " << arima_away_pred << "\nTotal: " << arima_home_pred + arima_away_pred << "\n\n\n";*/
+		stream << "PREDICTION\n";
+		float home_pred = combine_predictions(home_mean, home_exp_pred, home_regression_pred);
+		float away_pred = combine_predictions(away_mean, away_exp_pred, away_regression_pred);
+		float total = home_pred + away_pred;
+		stream << "Home : " <<home_pred <<"\n";
+		stream << "Away : " << away_pred<<"\n";
+		stream << "Total : " <<total <<"\n\n";
 
 
 		printf("%s", stream.str().c_str());
+
+		get_recommendation(total, home_lower + away_lower, home_upper + away_upper);
+
 
 
 		// Determine max size for iteration
@@ -256,12 +248,8 @@ void process_basketball_file(std::string const& file_path) {
 					printf("%-15d %-15d %-15d\n", home_score, away_score, total);
 				}
 			}
-
 			std::cout << std::endl;
 		}
-
-		get_recommendation(home_mean + away_mean, home_exp_pred + away_exp_pred, home_regression_pred + away_regression_pred, home_lower + away_lower, home_upper + away_upper);
-
 		stream.str("");
 		stream.clear();
 
