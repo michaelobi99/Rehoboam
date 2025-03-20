@@ -176,17 +176,17 @@ void process_basketball_file(std::string const& file_path) {
 #endif // Change console color
 
 		//Display results
-		std::string design(match_details.size() + match_string.size() + 5, '.');
+		std::string design(80, '.');
 		std::cout << design << "\n";
 		std::cout << match_string << " - " << match_details << "\n";
 		std::cout << design << "\n";
 
-		const char* str1 = "Point range";
+		const char* str1 = "Likely point range";
 		std::cout << std::setw(25) << std::right << str1 << "\n";
 
 		//Home
 		stream << "Home: ";
-		printf("%-10s", stream.str().c_str());
+		printf("%-5s", stream.str().c_str());
 		stream.str("");
 		stream << "(" << home_lower << " - " << home_upper << ")";
 		printf("%s\n", stream.str().c_str());
@@ -194,7 +194,7 @@ void process_basketball_file(std::string const& file_path) {
 
 		//Away
 		stream << "Away: ";
-		printf("%-10s", stream.str().c_str());
+		printf("%-5s", stream.str().c_str());
 		stream.str("");
 		stream << "(" << away_lower << " - " << away_upper << ")";
 		printf("%s\n", stream.str().c_str());
@@ -202,7 +202,7 @@ void process_basketball_file(std::string const& file_path) {
 
 		//H2H
 		stream << "H2H : ";
-		printf("%-10s", stream.str().c_str());
+		printf("%-5s", stream.str().c_str());
 		stream.str("");
 		stream << "(" << home_lower + away_lower << " - " << home_upper + away_upper << ")";
 		printf("%s\n\n", stream.str().c_str());
@@ -214,14 +214,11 @@ void process_basketball_file(std::string const& file_path) {
 		float total = home_pred + away_pred;
 		stream << "Home : " <<home_pred <<"\n";
 		stream << "Away : " << away_pred<<"\n";
-		stream << "Total : " <<total <<"\n\n";
-
+		stream << "Total: " <<total <<"\n\n";
 
 		printf("%s", stream.str().c_str());
 
 		get_recommendation(total, home_lower + away_lower, home_upper + away_upper);
-
-
 
 		// Determine max size for iteration
 		size_t a = home_h2h_scores.size();
@@ -248,8 +245,8 @@ void process_basketball_file(std::string const& file_path) {
 					printf("%-15d %-15d %-15d\n", home_score, away_score, total);
 				}
 			}
-			std::cout << std::endl;
 		}
+		std::cout << design << "\n\n";
 		stream.str("");
 		stream.clear();
 
