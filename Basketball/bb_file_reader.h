@@ -65,7 +65,7 @@ std::tuple<std::string, std::vector<int>, std::vector<int>> split_string(const c
 
 
 void get_recommendation(float pred, float low, float high) {
-	const int max_dist_range = 25;
+	const int max_dist_range = 22;
 	bool good_pred = low <= pred && pred <= high;
 	bool tight_range = (int)(high - low) <= max_dist_range;
 	if (good_pred && tight_range) {
@@ -77,7 +77,7 @@ void get_recommendation(float pred, float low, float high) {
 }
 
 float combine_predictions(float pred_1, float pred_2, float pred_3) {
-	return 0.3f * pred_1 + 0.4f * pred_2 + 0.3f * pred_3;
+	return 0.25f * pred_1 + 0.5f * pred_2 + 0.25f * pred_3;
 }
 
 
@@ -176,7 +176,7 @@ void process_basketball_file(std::string const& file_path) {
 #endif // Change console color
 
 		//Display results
-		std::string design(80, '.');
+		std::string design(80, '-');
 		std::cout << design << "\n";
 		std::cout << match_string << " - " << match_details << "\n";
 		std::cout << design << "\n";
@@ -208,7 +208,7 @@ void process_basketball_file(std::string const& file_path) {
 		printf("%s\n\n", stream.str().c_str());
 		stream.str("");
 
-		stream << "PREDICTION\n";
+		stream << "GAME PREDICTION\n";
 		float home_pred = combine_predictions(home_mean, home_exp_pred, home_regression_pred);
 		float away_pred = combine_predictions(away_mean, away_exp_pred, away_regression_pred);
 		float total = home_pred + away_pred;
