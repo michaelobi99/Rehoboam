@@ -4,7 +4,7 @@
 #include <sstream>
 #include <random>
 #include <ranges>
-#include "bb_predictors.h"
+#include "bb_quaters_file_reader.h"
 
 #ifdef _MSC_VER
 #include <Windows.h>
@@ -12,76 +12,7 @@
 
 
 
-std::string trim(const std::string& str) {
-	auto start = std::find_if_not(str.begin(), str.end(), [](unsigned char ch) {
-		return std::isspace(ch);
-		});
-
-	auto end = std::find_if_not(str.rbegin(), str.rend(), [](unsigned char ch) {
-		return std::isspace(ch);
-		}).base();
-
-	return (start < end) ? std::string(start, end) : "";
-}
-
-
-
-std::tuple<std::string, std::vector<int>, std::vector<int>> split_string(const char* str, size_t length) {
-	std::istringstream stream(str);
-
-	std::string name;
-	std::getline(stream, name, ':');
-	name = trim(name);
-
-	std::string past_scores_str{ "" };
-	std::getline(stream, past_scores_str, ':');
-	past_scores_str = trim(past_scores_str);
-
-	std::string h2h_scores_str{ "" };
-	std::getline(stream, h2h_scores_str, ':');
-
-
-	auto to_int_vec = [](std::string& str) {
-		std::vector<int> vec;
-		std::string s{ "" };
-		for (int i = 0; i < str.size(); ++i) {
-			if (isdigit(str[i]))
-				s.push_back(str[i]);
-			else {
-				if (s.size() > 0) {
-					vec.push_back(std::stoi(s));
-					s.clear();
-				}
-			}
-		}
-		if (s.size() > 0) vec.push_back(std::stoi(s));
-		return vec;
-		};
-
-	std::vector<int> past_scores = to_int_vec(past_scores_str);
-	std::vector<int> h2h_scores = (h2h_scores_str.size() > 0) ? to_int_vec(h2h_scores_str) : std::vector<int>{};
-	return std::tuple(name, past_scores, h2h_scores);
-}
-
-
-void get_recommendation(float pred, float low, float high) {
-	const int max_dist_range = 22;
-	bool good_pred = low <= pred && pred <= high;
-	bool tight_range = (int)(high - low) <= max_dist_range;
-	if (good_pred && tight_range) {
-		printf("CONFIDENCE: HIGH\n\n");
-	}
-	else {
-		printf("CONFIDENCE: LOW\n\n");
-	}
-}
-
-float combine_predictions(float pred_1, float pred_2, float pred_3) {
-	return 0.25f * pred_1 + 0.5f * pred_2 + 0.25f * pred_3;
-}
-
-
-void process_basketball_file(std::string const& file_path) {
+void read_and_process_fulltime_file(std::string const& file_path) {
 	std::string match_details;
 	std::string match_string;
 	std::string line;
@@ -141,12 +72,6 @@ void process_basketball_file(std::string const& file_path) {
 			std::tie(home_lower, home_upper) = t_dist(home_past_scores.size(), home_mean, home_stddev);
 			std::tie(away_lower, away_upper) = t_dist(away_past_scores.size(), away_mean, away_stddev);
 		}
-
-
-		//ARIMA
-		/*double arima_home_pred = predictARIMA(home_score);
-		double arima_away_pred = predictARIMA(away_score);*/
-
 		//.......................................................................................................................
 
 #ifdef _MSC_VER
@@ -212,37 +137,28 @@ void process_basketball_file(std::string const& file_path) {
 		float home_pred = combine_predictions(home_mean, home_exp_pred, home_regression_pred);
 		float away_pred = combine_predictions(away_mean, away_exp_pred, away_regression_pred);
 		float total = home_pred + away_pred;
-		stream << "Home : " <<home_pred <<"\n";
-		stream << "Away : " << away_pred<<"\n";
-		stream << "Total: " <<total <<"\n\n";
+		stream << "Home : " << home_pred << "\n";
+		stream << "Away : " << away_pred << "\n";
+		stream << "Total: " << total << "\n\n";
 
 		printf("%s", stream.str().c_str());
 
 		get_recommendation(total, home_lower + away_lower, home_upper + away_upper);
 
 		// Determine max size for iteration
-		size_t a = home_h2h_scores.size();
-		size_t b = away_h2h_scores.size();
-		if (a > 0) {
-			size_t max_h2h_size = a;
-
-			// Print table title
+		if (home_h2h_scores.size() > 0) {
 			printf("Recent H2H results\n");
-
-			// Print column headers
 			printf("%-15s %-15s %-15s\n", "Home", "Away", "Total");
-
-			// Print horizontal separator
 			printf("%.*s\n", 45, "---------------------------------------------");
 
-			// Print scores
-			for (size_t i = 0; i < max_h2h_size; i++) {
-				int home_score = (i < home_h2h_scores.size()) ? home_h2h_scores[i] : 0;
-				int away_score = (i < away_h2h_scores.size()) ? away_h2h_scores[i] : 0;
-				int total = home_score + away_score;
-
-				if (home_score > 0 || away_score > 0) {
-					printf("%-15d %-15d %-15d\n", home_score, away_score, total);
+			if (home_h2h_scores.size() != away_h2h_scores.size()) {
+				printf("ERROR: H2H score not consistent\n");
+			}
+			else {
+				int total = 0;
+				for (size_t i = 0; i < home_h2h_scores.size(); i++) {
+					total = home_h2h_scores[i] + away_h2h_scores[i];
+					printf("%-15d %-15d %-15d\n", home_h2h_scores[i], away_h2h_scores[i], total);
 				}
 			}
 		}
@@ -258,4 +174,12 @@ void process_basketball_file(std::string const& file_path) {
 	}//while
 
 	file.close();
+}
+
+void process_basketball_file(std::string const& file_path, bool quaters_file = false) {
+	if (!quaters_file)
+		read_and_process_fulltime_file(file_path);
+	else
+		read_and_process_quaters_file(file_path);
+	
 }

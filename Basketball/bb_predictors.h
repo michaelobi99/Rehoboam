@@ -3,6 +3,7 @@
 #include <cmath>
 #include <tuple>
 #include <iomanip>
+#include <algorithm>
 #include <sstream>
 #include <string>
 
@@ -38,7 +39,7 @@ float standard_deviation(const std::vector<int>& scores, float mean) {
 
 //............................................................................................................................................................
 //Exponential smoothing
-#define SMOOTHING_FACTOR 0.35
+#define SMOOTHING_FACTOR 0.4
 
 float exponential_smoothing(const std::vector<int>& scores) {
 	if (scores.size() == 0) return 0;
