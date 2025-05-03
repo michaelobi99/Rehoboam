@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <random>
+#include <algorithm>
 #include <ranges>
 #include "bb_predictors.h"
 
@@ -85,7 +86,7 @@ std::tuple<std::string, std::vector<int>> split_string_2(const char* str, size_t
 		}
 		if (s.size() > 0) vec.push_back(std::stoi(s));
 		return vec;
-		};
+	};
 
 	std::vector<int> past_scores = to_int_vec(past_scores_str);
 	return std::tuple(name, past_scores);
@@ -122,12 +123,7 @@ void split_quaters_score(std::string line, unsigned length, int& full_time_score
 			}
 		}
 	}
-	if (s.size() > 0) row.push_back(std::stoi(s));
 
-	if (row.size() < 6) {
-		std::cout << "ERROR: Quaters data incomplete.\n";
-		exit(1);
-	}
 	full_time_score = row[0];
 	q1_score += row[1];
 	q2_score += row[2];
@@ -183,8 +179,8 @@ void read_and_process_quaters_file(std::string const& file_path) {
 		while (std::getline(file, line) && line.size() <= 1) continue;
 
 		get_h2h_score_count(line, h2h_scores_count);
-		std::vector<int> home_h2h_scores(h2h_scores_count);
-		std::vector<int> away_h2h_scores(h2h_scores_count);
+		std::vector<int> home_h2h_scores(h2h_scores_count, 0);
+		std::vector<int> away_h2h_scores(h2h_scores_count, 0);
 		std::vector<std::vector<int>> quaters_score(h2h_scores_count, std::vector<int>(4, 0));
 
 		for (unsigned i{ 0 }; i < h2h_scores_count; ++i) {
@@ -194,7 +190,6 @@ void read_and_process_quaters_file(std::string const& file_path) {
 			line.clear();
 			while (std::getline(file, line) && line.size() <= 1) continue;
 			split_quaters_score(line, line.length(), away_h2h_scores[i], quaters_score[i][0], quaters_score[i][1], quaters_score[i][2], quaters_score[i][3]);
-			// std::cout << h2h_scores[i] << " " << quaters_score[i][0] << " " << quaters_score[i][1] << " " << quaters_score[i][2] << " " << quaters_score[i][3] << "\n";
 		}
 		match_details.clear();
 		while (std::getline(file, match_details) && match_details.size() <= 1) continue;
@@ -262,6 +257,7 @@ void read_and_process_quaters_file(std::string const& file_path) {
 		std::cout << design << "\n";
 
 		const char* str1 = "Likely point range";
+		const char* str2 = "Recent game points";
 		std::cout << std::setw(25) << std::right << str1 << "\n";
 
 		//Home
@@ -287,6 +283,18 @@ void read_and_process_quaters_file(std::string const& file_path) {
 		stream << "(" << home_lower + away_lower << " - " << home_upper + away_upper << ")";
 		printf("%s\n\n", stream.str().c_str());
 		stream.str("");
+
+
+		auto print_vec = []<typename T>(std::vector<T>&vec, std::ostringstream & stream) {
+			for (T elem : vec) { stream << std::left << std::setw(4) << elem; }
+			stream << "\n";
+		};
+
+		std::cout << std::setw(25) << std::left << str2 << "\n";
+		stream << "Home: ";  print_vec(home_past_scores, stream);
+		stream << "Away: ";  print_vec(away_past_scores, stream);
+		stream << "\n";
+
 
 		stream << "GAME PREDICTION\n";
 		float home_pred = combine_predictions(home_mean, home_exp_pred, home_regression_pred);

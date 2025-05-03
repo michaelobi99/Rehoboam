@@ -41,6 +41,10 @@ void read_and_process_fulltime_file(std::string const& file_path) {
 		auto [away_team_name, away_past_scores, away_h2h_scores] = split_string(line.c_str(), line.size());
 		match_string += " vs " + away_team_name;
 
+		/*std::cout << "Home score: ";
+		std::for_each(std::begin(home_past_scores), std::end(home_past_scores), [](int s) {std::cout << s << "\n"; });
+		std::for_each(std::begin(away_past_scores), std::end(away_past_scores), [](int s) {std::cout << s << "\n"; });*/
+
 		line.clear();
 		while (std::getline(file, match_details) && match_details.size() <= 1) continue;
 
@@ -107,6 +111,7 @@ void read_and_process_fulltime_file(std::string const& file_path) {
 		std::cout << design << "\n";
 
 		const char* str1 = "Likely point range";
+		const char* str2 = "Recent game points";
 		std::cout << std::setw(25) << std::right << str1 << "\n";
 
 		//Home
@@ -140,6 +145,16 @@ void read_and_process_fulltime_file(std::string const& file_path) {
 		stream << "Home : " << home_pred << "\n";
 		stream << "Away : " << away_pred << "\n";
 		stream << "Total: " << total << "\n\n";
+
+		auto print_vec = []<typename T>(std::vector<T>&vec, std::ostringstream & stream) {
+			for (T elem : vec) { stream << std::left << std::setw(4) << elem; }
+			stream << "\n";
+		};
+
+		stream << std::setw(25) << std::left << str2 << "\n";
+		stream << "Home: ";  print_vec(home_past_scores, stream);
+		stream << "Away: ";  print_vec(away_past_scores, stream);
+		stream << "\n";
 
 		printf("%s", stream.str().c_str());
 

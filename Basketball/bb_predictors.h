@@ -23,7 +23,9 @@ float mean(const std::vector<int>& scores) {
 }
 
 float standard_deviation(const std::vector<int>& scores, float mean) {
-	if (scores.empty()) return 0;
+	if (scores.size() < 2) {
+		return 0;
+	}
 	float sum_squared_diff{ 0.0 };
 	int size = scores.size();
 	for (unsigned i{ 0 }; i < size; ++i) {
@@ -43,6 +45,7 @@ float standard_deviation(const std::vector<int>& scores, float mean) {
 
 float exponential_smoothing(const std::vector<int>& scores) {
 	if (scores.size() == 0) return 0;
+	if (scores.size() < 2) return scores[0];
 	std::vector<int> scores_reversed(std::rbegin(scores), std::rend(scores));
 	int N = scores_reversed.size();
 	float current_smoothed_value{ 0.0 }, previous_smoothed_value{ 0.0 };
