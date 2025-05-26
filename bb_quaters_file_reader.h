@@ -145,7 +145,7 @@ void get_recommendation(float pred, float low, float high) {
 }
 
 float combine_predictions(float pred_1, float pred_2, float pred_3) {
-	return 0.25f * pred_1 + 0.5f * pred_2 + 0.25f * pred_3;
+	return (1/3.f) * (pred_1 + pred_2 + pred_3);
 }
 
 void read_and_process_quaters_file(std::string const& file_path) {
