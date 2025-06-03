@@ -16,39 +16,82 @@ class Player {
 public:
 	Player() = default;
 
-	Player(std::string name, unsigned ranking, unsigned elo_ranking, unsigned clay_elo,
-		unsigned hard_elo, unsigned grass_elo, unsigned age) :
+	Player(std::string name, unsigned ranking, unsigned elo_ranking, float elo_score, unsigned clay_elo, float clay_elo_score, unsigned hard_elo, float hard_elo_score,
+		unsigned grass_elo, float grass_elo_score, unsigned age, char gender) :
 		name{ std::move(name) },
 		ranking{ ranking },
 		elo_ranking{ elo_ranking },
+		elo_score{ elo_score },
 		clay_elo_ranking{ clay_elo },
+		clay_elo_score{ clay_elo_score },
 		hard_elo_ranking{ hard_elo },
+		hard_elo_score{ hard_elo_score },
 		grass_elo_ranking{ grass_elo },
-		age{ age }
+		grass_elo_score{ grass_elo_score },
+		age{ age },
+		gender{gender}
 	{}
 
-	void compare_profile(Player const& other, std::string surface, std::ostringstream& stream) const {
-		std::transform(surface.begin(), surface.end(), surface.begin(), [](unsigned char c) { return std::tolower(c); });
-		stream << std::left << std::setw(10) << "Name:" << std::left << std::setw(30) << name << other.name << "\n";
-		stream << std::left << std::setw(10) << "Age:" << std::left << std::setw(30) << age << other.age << "\n";
-		stream << std::left << std::setw(10) << "Ranking:" << std::left << std::setw(30) << ranking << other.ranking << "\n";
-		if (surface.contains("hard"))
-			stream << std::left << std::setw(10) << "ELO_Hard" << std::left << std::setw(30) << hard_elo_ranking << other.hard_elo_ranking << "\n";
-		else if (surface.contains("clay"))
-			stream << std::left << std::setw(10) << "ELO_Clay:" << std::left << std::setw(30) << clay_elo_ranking << other.clay_elo_ranking << "\n";
-		else
-			stream << std::left << std::setw(10) << "ELO_Grass:" << std::left << std::setw(30) << grass_elo_ranking << other.grass_elo_ranking << "\n\n";
-	}
+	friend void compare_profile(Player&, Player&, std::string, std::ostringstream&);
 
 private:
+	
 	std::string name;
 	unsigned ranking;
 	unsigned elo_ranking;
+	float elo_score;
 	unsigned clay_elo_ranking;
+	float clay_elo_score;
 	unsigned hard_elo_ranking;
+	float hard_elo_score;
 	unsigned grass_elo_ranking;
+	float grass_elo_score;
 	unsigned age;
+	char gender;
 };
+
+void compare_profile(Player& player1, Player& player2, std::string surface, std::ostringstream& stream) {
+	std::string tournament_str = player1.gender == 'M' ? "ATP" : "WTA";
+	std::transform(surface.begin(), surface.end(), surface.begin(), [](unsigned char c) { return std::tolower(c); });
+	stream << std::left << std::setw(17) << "Name:" << std::left << std::setw(25) << player1.name << player2.name << "\n";
+	stream << std::left << std::setw(17) << "Age:" << std::left << std::setw(25) << player1.age << player2.age << "\n";
+	stream << std::left << std::setw(17) << tournament_str + " Ranking:" << std::left << std::setw(25) << player1.ranking << player2.ranking << "\n";
+	float player1_elo_score{ 0.0 }, player2_elo_score{ 0.0 };
+	if (surface.contains("hard")) {
+		stream << std::left << std::setw(17) << "ELO_Hard" << std::left << std::setw(25) << player1.hard_elo_ranking << player2.hard_elo_ranking << "\n";
+		player1_elo_score = player1.hard_elo_score;
+		player2_elo_score = player2.hard_elo_score;
+	}
+	else if (surface.contains("clay")) {
+		stream << std::left << std::setw(17) << "ELO_Clay:" << std::left << std::setw(25) << player1.clay_elo_ranking << player2.clay_elo_ranking << "\n";
+		player1_elo_score = player1.clay_elo_score;
+		player2_elo_score = player2.clay_elo_score;
+	}
+	else {
+		stream << std::left << std::setw(17) << "ELO_Grass:" << std::left << std::setw(25) << player1.grass_elo_ranking << player2.grass_elo_ranking << "\n";
+		player1_elo_score = player1.grass_elo_score;
+		player2_elo_score = player2.grass_elo_score;
+	}
+	std::ostringstream prob_stream;
+	prob_stream << std::setprecision(4);
+	float match_win_prob_for_p1 = (1 / (float)(1 + std::pow(10, ((player2_elo_score - player1_elo_score) / float(400)))))  * 100;
+	prob_stream << match_win_prob_for_p1 << "%";
+	std::string p1_win_prob_str = prob_stream.str();
+	prob_stream.str("");
+
+
+	float match_win_prob_for_p2{ 100 - match_win_prob_for_p1 };
+	prob_stream << match_win_prob_for_p2 << "%";
+	std::string p2_win_prob_str = prob_stream.str();
+	prob_stream.str("");
+
+	if (player1_elo_score != 0 && player2_elo_score != 0) {
+		stream << std::left << std::setw(17) << "Win Probability:" << std::left << std::setw(25) << p1_win_prob_str << p2_win_prob_str << "\n";
+	}
+	else
+		stream << std::left << std::setw(10) << "Win Probability:" << std::left << std::setw(25) << " " << " " << "\n\n";
+	
+}
 
 
 std::string trim_(const std::string& str) {
@@ -77,7 +120,6 @@ std::vector<std::string> split(const std::string& str, char delimiter) {
 std::string replace_char(const std::string& str, char ch) {
 	std::string result = str;
 	std::replace(result.begin(), result.end(), ch, ' ');
-	//std::replace(result.begin(), result.end(), '.', ' ');
 	return result;
 }
 
@@ -107,9 +149,23 @@ bool same_name(std::string str1, std::string str2) {
 	for (auto& str : str1_tokens) str = trim_(replace_char(str, '.'));
 	for (auto& str : str2_tokens) str = trim_(replace_char(str, '.'));
 
-	if (std::size(str1_tokens) != std::size(str2_tokens)) {
-		return false;
+
+	std::string longest_name{};
+	auto iter = std::max_element(str1_tokens.begin(), str1_tokens.end(),
+		[](std::string& a, std::string& b) {return a.size() < b.size(); });
+
+	if (iter != str1_tokens.end()) longest_name = *iter;
+
+	bool found = false;
+
+	for (auto name : str2_tokens) {
+		if (longest_name == name) {
+			found = true;
+			break;
+		}
 	}
+	if (!found) return false;
+
 	unsigned counter = 0;
 
 	for (auto n1 : str1_tokens) {
@@ -120,10 +176,10 @@ bool same_name(std::string str1, std::string str2) {
 			}
 		}
 	}
-	return counter == str1_tokens.size();
+	return counter > 1;
 }
 
-std::tuple<Player, Player> make_players_profile(std::string player1, std::string player2, std::fstream& file) {
+std::tuple<Player, Player> make_players_profile(std::string player1, std::string player2, std::fstream& file, char gender) {
 	std::string line;
 	std::vector<Player> players(2);
 
@@ -151,7 +207,6 @@ std::tuple<Player, Player> make_players_profile(std::string player1, std::string
 			// Check if this is one of our target players
 			if (same_name(player1, player_name)) {
 				try {
-					// Parse the required fields
 					unsigned elo_rank = static_cast<unsigned>(std::stoi(trim(fields[0])));     // Elo Rank
 					double age_double = std::stod(trim(fields[2]));                            // Age
 					unsigned age = static_cast<unsigned>(age_double);
@@ -159,18 +214,20 @@ std::tuple<Player, Player> make_players_profile(std::string player1, std::string
 					unsigned hard_elo_rank = static_cast<unsigned>(std::stoi(trim(fields[4]))); // hElo Rank
 					unsigned clay_elo_rank = static_cast<unsigned>(std::stoi(trim(fields[6]))); // cElo Rank  
 					unsigned grass_elo_rank = static_cast<unsigned>(std::stoi(trim(fields[8]))); // gElo Rank
+					float elo_score = static_cast<float>(std::stod(trim(fields[3])));
+					float hard_elo_score = static_cast<float>(std::stod(trim(fields[5])));
+					float clay_elo_score = static_cast<float>(std::stod(trim(fields[7])));
+					float grass_elo_score = static_cast<float>(std::stod(trim(fields[9])));
 
-					players[0] = Player(player_name, atp_rank, elo_rank,
-						clay_elo_rank, hard_elo_rank, grass_elo_rank, age);
+					players[0] = Player(player_name, atp_rank, elo_rank, elo_score,
+						clay_elo_rank, clay_elo_score, hard_elo_rank, hard_elo_score, grass_elo_rank, grass_elo_score, age, gender);
 					++counter;
 				}
 				catch (const std::exception& e) {
-					// Skip malformed lines
 					continue;
 				}
 			}else if (same_name(player2, player_name)) {
 				try {
-					// Parse the required fields
 					unsigned elo_rank = static_cast<unsigned>(std::stoi(trim(fields[0])));     // Elo Rank
 					double age_double = std::stod(trim(fields[2]));                            // Age
 					unsigned age = static_cast<unsigned>(age_double);
@@ -178,13 +235,16 @@ std::tuple<Player, Player> make_players_profile(std::string player1, std::string
 					unsigned hard_elo_rank = static_cast<unsigned>(std::stoi(trim(fields[4]))); // hElo Rank
 					unsigned clay_elo_rank = static_cast<unsigned>(std::stoi(trim(fields[6]))); // cElo Rank  
 					unsigned grass_elo_rank = static_cast<unsigned>(std::stoi(trim(fields[8]))); // gElo Rank
+					float elo_score = static_cast<float>(std::stod(trim(fields[3])));
+					float hard_elo_score = static_cast<float>(std::stod(trim(fields[5])));
+					float clay_elo_score = static_cast<float>(std::stod(trim(fields[7])));
+					float grass_elo_score = static_cast<float>(std::stod(trim(fields[9])));
 
-					players[1] = Player(player_name, atp_rank, elo_rank,
-						clay_elo_rank, hard_elo_rank, grass_elo_rank, age);
+					players[1] = Player(player_name, atp_rank, elo_rank, elo_score,
+						clay_elo_rank, clay_elo_score, hard_elo_rank, hard_elo_score, grass_elo_rank, grass_elo_score, age, gender);
 					++counter;
 				}
 				catch (const std::exception& e) {
-					// Skip malformed lines
 					continue;
 				}
 			}
@@ -212,10 +272,13 @@ void process_tennis_file(std::string const& game_file_path) {
 	}
 	std::ostringstream stream;
 
+	char gender = 'M';
 	if (game_file_path.contains("ATP"))
 		profile_file.open(male_file, std::ios::in);
-	else
+	else {
+		gender = 'F';
 		profile_file.open(female_file, std::ios::in);
+	}
 
 
 	//This loop reads all non-empty lines in the file. Three lines in a single loop.
@@ -230,7 +293,7 @@ void process_tennis_file(std::string const& game_file_path) {
 
 		auto [player1, player2] = split_players_names(players_string.c_str());
 
-		auto [player_1, player_2] = make_players_profile(player1, player2, profile_file);
+		auto [player_1, player_2] = make_players_profile(player1, player2, profile_file, gender);
 #ifdef _MSC_VER
 		std::random_device rd{};
 		auto mtgen = std::mt19937{ rd() };
@@ -259,7 +322,7 @@ void process_tennis_file(std::string const& game_file_path) {
 
 		//Display results
 		stream << design << "\n";
-		player_1.compare_profile(player_2, surface, stream);
+		compare_profile(player_1, player_2, surface, stream);
 		stream << design << "\n\n";
 
 		std::cout << stream.str();
