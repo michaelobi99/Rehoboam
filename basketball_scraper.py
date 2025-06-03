@@ -16,7 +16,25 @@ def setup_driver():
     options = webdriver.ChromeOptions()
     options.add_argument('--disable-notifications')
     options.add_argument('--headless')  # Run in background
-    return webdriver.Chrome(options=options)
+    options.add_argument('--disable-gpu')  # Recommended for headless
+    options.add_argument('--window-size=1920,1080')  # Set a standard window size
+    options.add_argument('--no-sandbox')  # Bypass OS security model
+    options.add_argument('--disable-dev-shm-usage')  # Overcome limited resource problems
+    
+    # Add a realistic user agent
+    options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36')
+    
+    # Some additional useful options
+    options.add_argument('--disable-blink-features=AutomationControlled')  # Hide automation
+    options.add_experimental_option('excludeSwitches', ['enable-automation'])  # Hide automation 
+    options.add_experimental_option('useAutomationExtension', False)  # Hide automation
+    
+    driver = webdriver.Chrome(options=options)
+    
+    # Execute JS to modify navigator.webdriver flag
+    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+    
+    return driver
 
 
 def is_game_live(game_element):
@@ -54,41 +72,44 @@ def get_exact(league_name):
     if league_name == "Premier League Women": return "PRE"
     if league_name == "Premier League Women - Play Offs": return "PRE"
     if league_name == "Prva Liga" or league_name == "Prva Liga - Play Offs": return "PL"
-    if league_name == "Pro B": return "PB"
+    if league_name == "Pro B" or league_name == "Pro B - Play - In": return "PB"
+    if league_name == "Pro B - Play Offs": return "PB"
     # if league_name == "Pro B": return "PROB"
     if league_name == "Pro A" or league_name == "Pro A - Play Offs": return "PA"
     if league_name == "Super League": return "SL"
     if league_name == "Super League - Promotion - Play Offs": return "SL"
+    if league_name == "Super League - Play Offs": return "SL"
     if league_name == "Super League - Relegation Group": return "SL"
     if league_name == "Liga Leumit" or league_name == "Liga Leumit - Losers stage" \
         or league_name == "Liga Leumit - Winners stage": return "LL"
     if league_name == "Super Lig": return "SL"
-    if league_name == "Super Lig": return "SL"
-    if league_name == "Premijer liga": return "A1"
+    if league_name == "Super Lig - Play Offs": return "SL"
+    if league_name == "Premijer liga" or league_name == "Premijer liga - Play Offs": return "A1"
     if league_name == "First League": return "FL"
-    if league_name == "Basket Liga": return "BL"
+    if league_name == "Basket Liga" or league_name == "Basket Liga - Play off" or \
+        league_name == "Basket Liga - Play Offs": return "BL"
     if league_name == "Basket League": return "BL"
     if league_name == "SB League" or league_name == "SB League - Play Offs": return "SBL"
     if league_name == "Basketligan" or league_name == "Basketligan - Play Offs": return "LIG"
-    if league_name == "Liga A": return "LA"
+    if league_name == "Liga A" or league_name == "Liga A - Play Offs" or league_name == "Liga A - Play out": return "LA"
     if league_name == "Liga Uruguaya" or league_name == "Liga Uruguaya - Winners stage" or \
         league_name == "Liga Uruguaya - Losers stage" or league_name == "Liga Uruguaya - Play Offs":
         return "LC"
-    if league_name == "Superleague": return "SL"
-    if league_name == "Superliga": return "SL"
-    if league_name == "Superliga": return "ABL"
-    if league_name == "Superliga - Play Offs": return "ABL"
-    if league_name == "Superliga - Losers stage": return "ABL"
-    if league_name == "Superliga - Winners stage": return "ABL"
+    if league_name == "Superleague" or league_name == "Superleague - Play Offs": return "SL"
+    if league_name == "Superliga" or league_name == "Superliga - Play Offs": return "SL"
+    # if league_name == "Superliga": return "ABL"
+    # if league_name == "Superliga - Play Offs": return "ABL"
+    # if league_name == "Superliga - Losers stage": return "ABL"
+    # if league_name == "Superliga - Winners stage": return "ABL"
     if league_name == "NB I. A": return "NBI"
     if league_name == "NB I. A - 5th-8th places": return "NBI"
     if league_name == "NB I. A - Play Offs": return "NBI"
     if league_name == "NB I. A - Play Out": return "NBI"
     if league_name == "NB I. A Women": return "DIV"
     if league_name == "NB I. A Women - Play Offs": return "DIV"
-    if league_name == "Lega A": return "LA"
+    if league_name == "Lega A" or league_name == "Lega A - Play Offs": return "LA"
     if league_name == "Serie A2": return "A2"
-    if league_name == "SLB": return "BBL"  
+    if league_name == "SLB" or league_name == "SLB - Play Offs": return "BBL"  
     if league_name == "BNXT League": return "BNXT"
     if league_name == "Champions League - Winners stage": return "CHL"
     if league_name == "Champions League - Play Offs": return "CHL"
@@ -101,15 +122,18 @@ def get_exact(league_name):
     if league_name == "Korisliiga - Winners stage": return "KOR"
     if league_name == "Korisliiga - Play Offs": return "KOR"
     if league_name == "Eurocup - Play Offs": return "EUR"
-    if league_name == "Primera FEB": return "PF"
+    if league_name == "Primera FEB" or league_name == "Primera FEB - Play Offs": return "PF"
     if league_name == "EuroBasket - Qualification - Fourth round": return "EB"
     if league_name == "FIBA Europe Cup - Play Offs": return "EC"
     if league_name == "WCBA Women - Play Offs": return "WCBA"
-    if league_name == "B.League": return "B.L"
+    if league_name == "B.League" or league_name == "B.League - Play Offs": return "B.L"
     if league_name == "B2.League": return "B2L"
     if league_name == "Division 1": return "D1"
     if league_name == "Korvpalli Meistriliiga - Play Offs" \
         or league_name == "Korvpalli Meistriliiga": return "KOR"
+    if league_name == "Philippine Cup": return "PC"
+    if league_name == "LNB 2": return "L2"
+    if league_name == "Pro Basketball League - Play Offs": return "PBL"
     return league_name
 
 
@@ -127,66 +151,91 @@ def is_desired_league(game_element):
         league_name = league_name.replace('Draw', '')
 
         desired_leagues = [
-                            'ACB', #Spain
-                            'Primera FEB',
+                            # 'ACB', #Spain
+                            'ACB - Play Offs', #Spain
+                            # 'Primera FEB',
+                            # 'Primera FEB - Play Offs',
                             # 'SLB', #UK
                             # 'SLB - Play Offs', #UK
                             # 'NBA', #USA
                             # 'NBA - Promotion - Play Offs', #USA
                             # 'NBA - Play Offs', #USA
-                            # 'WNBA', #USA
+                            'WNBA', #USA
                             # 'NCAA', #USA
                             # 'NCAA - Play Offs', #USA
                             # 'NIT', #USA
                             # 'NCAA Women', #USA
                             # 'CIBACOPA', #Mexico
-                            # 'BSN', #Puerto Rico
+                            # 'CIBACOPA - Play Offs', #Mexico
+                            'BSN', #Puerto Rico
                             # 'CBA', #China         
                             # 'CBA - Play Offs', #China         
                             # 'WCBA Women', #China
                             # 'WCBA Women - Play Offs', #China
+                            # 'VBA', #Vietnam
                             # 'B.League', #Japan
+                            # 'B.League - Play Offs', #Japan
                             # 'B2.League', #Japan
                             # 'SBL', #Taiwan
-                            'TPBL', #Taiwan
+                            # 'TPBL', #Taiwan
+                            'TPBL - Play Offs', #Taiwan
                             # 'MPBL', #Philippines
+                            'Philippine Cup', #Philippines
                             # 'NBB', #Brazil
-                            # 'NBB - Play Offs', #Brazil
+                            'NBB - Play Offs', #Brazil
                             # 'Liga A', #Argentina
+                            'Liga A - Play Offs', #Argentina
+                            # 'Liga A - Play Out', #Argentina
                             # 'Liga Uruguaya', #Uruguay
                             # 'Liga Uruguaya - Play Offs', #Uruguay
                             # 'Liga Uruguaya - Winners stage', #Uruguay
                             # 'Liga Uruguaya - Losers stage', #Uruguay
+                            # 'LNB - Apertura', #Paraguay
+                            'LBP - Apertura', #Colombia
+                            'Libobasquet - First stage', #Bolivia
                             # 'NBL1 East', #Australia
                             # 'NBL1 East Women', #Australia
-                            # 'NBL1 West', #Australia
-                            # 'NBL1 West Women', #Australia
+                            # 'NBL1 North', #Australia
+                            # 'NBL1 North Women', #Australia
                             # 'NBL1 South', #Australia
                             # 'NBL1 South Women', #Australia
                             # 'NBL1 Central', #Australia
                             # 'NBL1 Central Women', #Australia
-                            # 'NBL1 North', #Australia
-                            # 'NBL1 North Women', #Australia
-                            'BBL', #Germany
+                            # 'NBL1 West', #Australia
+                            # 'NBL1 West Women', #Australia
+                            
+                           
+                            # 'BBL', #Germany
+                            'BBL - Play Offs', #Germany
                             # 'Pro A', #Germany
-                            'Pro A - Play Offs', #Germany
-                            'LNB', #France, Chile
-                            # 'LNB - Play Offs', #France, Chile
-                            'Pro B', #France, Germany
-                            'Lega A', #Italy
+                            # 'Pro A - Play Offs', #Germany
+                            'LNB', #France, Chile, Dominican Republic
+                            # 'LNB - Play-in', #France, Chile
+                            'LNB - Play Offs', #France, Chile
+                            # 'LNB 2', #Chile
+                            # 'Pro B', #France, Germany
+                            # 'Pro B - Play - In', #France, Germany
+                            # 'Pro B - Play Offs', #France, Germany
+                            # 'Lega A', #Italy
+                            'Lega A - Play Offs', #Italy
                             # 'Serie A2', #Italy
+                            'Pro Basketball League - Play Offs',
                             # 'NB I. A', #Hungary
                             # 'NB I. A - Play Offs', #Hungary
                             # 'NB I. A - Play Out', #Hungary
                             # 'NB I. A - 5th-8th places', #Hungary
                             # 'NB I. A Women', #Hungary
-                            'NB I. A Women - Play Offs', #Hungary
-                            'NB I. A Women - Play Out', #Hungary
+                            # 'NB I. A Women - Play Offs', #Hungary
+                            # 'NB I. A Women - Play Out', #Hungary
+                            # "DBL", #Netherlands
+                            # 'DBL - Play Offs', #Netherlands
                             # 'Eurocup', 
                             # 'Eurocup - Play Offs',
-                            'ABA League',   
-                            'BNXT League',
+                            # 'ABA League',   
+                            # 'ABA League - Play Offs',   
+                            # 'BNXT League',
                             # 'Euroleague',
+                            # 'Euroleague - Final Four',
                             # 'Euroleague - Play Offs',
                             # 'Champions League',
                             # 'Champions League - Play Offs',
@@ -196,13 +245,13 @@ def is_desired_league(game_element):
                             # 'LBL', #Latvia
                             # 'LBL - Play Offs', #Latvia
                             # 'Korvpalli Meistriliiga', #Estonia
-                            'Korvpalli Meistriliiga - Play Offs', #Estonia
+                            # 'Korvpalli Meistriliiga - Play Offs', #Estonia
                             # 'Latvian-Estonian League', 
                             # 'Latvian-Estonian League - Play Offs',
                             # 'Korisliiga', #Finland  
                             # 'Korisliiga - Losers stage',
                             # 'Korisliiga - Winners stage',
-                            'Korisliiga - Play Offs',
+                            # 'Korisliiga - Play Offs',
                             # 'Basketligaen', #Denmark
                             # 'Basketligaen - Play Offs', #Denmark
                             # 'Basketligaen - Losers stage', #Denmark
@@ -211,59 +260,69 @@ def is_desired_league(game_element):
                             # 'Basketligan', #Sweden
                             # 'Basketligan - Play Offs', #Sweden
                             # 'Premier League', #Iceland or Saudi Arabia
-                            'Premier League - Play Offs', #Iceland or Saudi Arabia
+                            # 'Premier League - Play Offs', #Iceland or Saudi Arabia
                             # 'Premier League Women', #Iceland
                             # 'Premier League Women - Play Offs', #Iceland
                             # 'Super League', #Isreal #Russia
                             # 'Super League - Promotion - Play Offs', #Isreal #Russia
                             # 'Super League - Promotion - Relegation Group', #Isreal #Russia
-                            # 'Super League - Play Offs', #Isreal #Russia
+                            'Super League - Play Offs', #Isreal #Russia
                             # 'VTB United League', #Russia
                             # 'VTB United League - Play Offs', #Russia
                             # 'Superleague', #Georgia
+                            # 'Superleague - Play Offs', #Georgia
                             # 'Liga Leumit', #Isreal
                             # 'Liga Leumit - Losers stage', #Isreal
                             # 'Liga Leumit - Winners stage', #Isreal
                             # 'WBL Women', #Isreal women
-                            'Superliga', #Austria, Venezuela
-                            # 'Superliga - Play Offs', #Austria, Venezuela
+                            # 'Superliga', #Austria, Venezuela
+                            'Superliga - Play Offs', #Austria, Venezuela
                             # 'Superliga - Losers stage', #Austria
                             # 'Superliga - Winners stage', #Austria
                             # 'BLNO', #Norway
                             # 'BLNO - Play Offs', #Norway
                             # 'SB League', #Switzerland
-                            'SB League - Play Offs', #Switzerland
+                            # 'SB League - Play Offs', #Switzerland
                             # 'LPB', #Portugal
-                            # 'NBL', #Bulgaria, czech and Austrailia, New zealand
+                            # 'LPB - Play Offs', #Portugal
+                            'NBL', #Bulgaria, czech and Austrailia, New zealand
                             # 'NBL - Losers stage',         
                             # 'NBL - Winners stage',
-                            'NBL - Play Offs',
+                            # 'NBL - Play Offs',
                             # 'Prva Liga', #Croatia and Macedonia
                             # 'Prva Liga - Play Offs', #Croatia and Macedonia
-                            'LKL', #Lithuania
+                            # 'LKL', #Lithuania
+                            'LKL - Play Offs', #Lithuania
                             # 'NKL', #Lithuania
                             # 'NKL - Play Offs', #Lithuania
                             # 'NKL - Winners stage', #Lithuania
                             # 'NKL - Losers stage', #Lithuania
-                            'Premijer liga', #Croatia
+                            # 'Premijer liga', #Croatia
+                            # 'Premijer liga - Play Offs', #Croatia
                             # 'First League', #Serbia  
                             # 'Division A', #Cyprus
-                            'Division A - Play Offs', #Cyprus
+                            # 'Division A - Play Offs', #Cyprus
                             'Division 1', #Lebanon
                             # 'KBL' #Korea
                             # 'KBL - Play Offs' #Korea
                             # 'WKBL Women' #Korea
                             # 'Extraliga', #Slovakia
                             # 'Extraliga - Play Offs', #Slovakia
-                            'Basket Liga', #Poland
+                            # 'Basket Liga', #Poland
+                            'Basket Liga - Play Offs', #Poland
+                            # 'Basket Liga - Play in', #Poland
                             # 'Divizia A', #Romania
-                            'Divizia A - Play Offs', #Romania
-                            'Divizia A - Play Out', #Romania
-                            # '1. Liga', #Czech, Poland
+                            # 'Divizia A - 5th-8th places', #Romania
+                            # 'Divizia A - 9th-16th places', #Romania
+                            'Divizia A - 13th-16th places', #Romania
+                            'Divizia A - Play Offs' #Romania
+                            # 'Divizia A - Play Out', #Romania
+                            # '1. Liga', #Czech, Poland 
                             # '1. Liga - Losers stage', #Czech
                             # '1. Liga - Winners stage', #Czech
-                            '1. Liga - Play Offs', #Czech
-                            'Super Lig' #Turkey
+                            # '1. Liga - Play Offs', #Czech, Poland
+                            # 'Super Lig' #Turkey
+                            # 'Super Lig - Play Offs' #Turkey
                             # 'TBL' #Turkey
                             # 'TBL - Play Offs' #Turkey
 
@@ -285,8 +344,7 @@ def is_desired_league(game_element):
                             # 'Slovenian Cup', 'WNBL Women', 'A1', 'National League', 'VTB United League', 
                             # 'ENBL', 
                         ]
-        return (any(league == league_name for league in desired_leagues), get_exact(league_name), country)
-                
+        return (any(league == league_name for league in desired_leagues), get_exact(league_name), country)   
     except NoSuchElementException:
         return (False, "", "")
     
@@ -683,7 +741,7 @@ def scrape_h2h_page(driver, url, league):
 
 def main():
     # 0 for today, 1 for next day games
-    day = 0
+    day = 1
     driver = setup_driver()
     try:
         # Get today's upcoming games
@@ -694,12 +752,11 @@ def main():
         file1 = r"C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\Basketball\NBA2.txt"
         file2 = r"C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\Basketball\random2.txt"
 
-        #file1_leagues = ["NBA", "WNBA", "NCAA", "NCAA Women", "KBL", "LA", "NBB"]
-        file1_countries = ["USA", "ARGENTINA", "BRAZIL", "VENEZUELA", "CHILE", "CHINA", "JAPAN", "URUGUAY", "AUSTRALIA",\
-                           "NEW ZEALAND", "SOUTH KOREA", "MEXICO", "PUERTO RICO"]
+        file1_countries = ["USA", "ARGENTINA", "BRAZIL", "VENEZUELA", "CHILE", "CHINA", "TAIWAN", "VIETNAM", "JAPAN", "URUGUAY", "AUSTRALIA",\
+                           "NEW ZEALAND", "DOMINICAN REPUBLIC", "SOUTH KOREA", "BOLIVIA", "MEXICO", "PUERTO RICO", "PARAGUAY", "PHILIPPINES", "COLOMBIA"]
 
         # For each upcoming game, get last 15 scores and H2H
-        last_saved = 0 #default value should be 0
+        last_saved = 8  #default value should be 0
         for number, game in enumerate(upcoming):
             if (number+1) > last_saved:
                 print(f'{number+1}/{number_of_games}', '\r', end = '')
@@ -728,7 +785,7 @@ def main():
                         home_score = match['away_score']
                     output_buffer.write(home_score+' ')
                 output_buffer.write('\n')
-
+ 
                 output_buffer.write(f'{away_team}: ')
                 for match in results['away_matches']:
                     if away_team == match['home']:
@@ -761,9 +818,9 @@ def main():
                 time.sleep(1)
              
     except Exception as e:
-        print(f"Error in main: {e}")
+        print(f"Error in main: {e}")  
     finally:
-        driver.quit()
+        driver.quit() 
 
 if __name__ == "__main__":
     main()
