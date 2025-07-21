@@ -1,96 +1,120 @@
-#pragma once
-#include <string>
-#include <string>
-#include <fstream>
-#include <iostream>
+#include "Elo.h"
 #include <algorithm>
-#include <iomanip>
-#include <map>
+
+
 
 #ifdef _MSC_VER
 #include <Windows.h>
 #endif
 
 
-class Player {
-public:
-	Player() = default;
+void print_player_stats(Player& player1, Player& player2, std::string surface, std::ostringstream& stream, std::string& design, std::string& tournament) {
+	if (player1.name.empty() || player2.name.empty()) return;
+	if (player1.age == 0 || player2.age == 0) return;
+	if (player1.ranking == 0 || player2.ranking == 0) return;
 
-	Player(std::string name, unsigned ranking, unsigned elo_ranking, float elo_score, unsigned clay_elo, float clay_elo_score, unsigned hard_elo, float hard_elo_score,
-		unsigned grass_elo, float grass_elo_score, unsigned age, char gender) :
-		name{ std::move(name) },
-		ranking{ ranking },
-		elo_ranking{ elo_ranking },
-		elo_score{ elo_score },
-		clay_elo_ranking{ clay_elo },
-		clay_elo_score{ clay_elo_score },
-		hard_elo_ranking{ hard_elo },
-		hard_elo_score{ hard_elo_score },
-		grass_elo_ranking{ grass_elo },
-		grass_elo_score{ grass_elo_score },
-		age{ age },
-		gender{gender}
-	{}
+	bool bestOf5 = false;
+	std::vector<std::string> bestOf5Tournaments = { "French Open", "US Open", "Australian Open", "Wimbledon" };
 
-	friend void compare_profile(Player&, Player&, std::string, std::ostringstream&);
+	for (auto str : bestOf5Tournaments) {
+		if (tournament.contains(str)) {
+			bestOf5 = true;
+			break;
+		}
+	}
 
-private:
-	
-	std::string name;
-	unsigned ranking;
-	unsigned elo_ranking;
-	float elo_score;
-	unsigned clay_elo_ranking;
-	float clay_elo_score;
-	unsigned hard_elo_ranking;
-	float hard_elo_score;
-	unsigned grass_elo_ranking;
-	float grass_elo_score;
-	unsigned age;
-	char gender;
-};
-
-void compare_profile(Player& player1, Player& player2, std::string surface, std::ostringstream& stream) {
-	std::string tournament_str = player1.gender == 'M' ? "ATP" : "WTA";
+	stream << design << "\n";
+	stream << tournament << "\n";
+	stream << design << "\n";
 	std::transform(surface.begin(), surface.end(), surface.begin(), [](unsigned char c) { return std::tolower(c); });
-	stream << std::left << std::setw(17) << "Name:" << std::left << std::setw(25) << player1.name << player2.name << "\n";
-	stream << std::left << std::setw(17) << "Age:" << std::left << std::setw(25) << player1.age << player2.age << "\n";
-	stream << std::left << std::setw(17) << tournament_str + " Ranking:" << std::left << std::setw(25) << player1.ranking << player2.ranking << "\n";
+	stream << std::left << std::setw(25) << "Name:" << std::left << std::setw(25) << player1.name << player2.name << "\n";
+	stream << std::left << std::setw(25) << "Age:" << std::left << std::setw(25) << player1.age << player2.age << "\n";
+	stream << std::left << std::setw(25) << "Official Ranking:" << std::left << std::setw(25) << player1.ranking << player2.ranking << "\n";
+	stream << std::left << std::setw(25) << "Elo Ranking:" << std::left << std::setw(25) << player1.elo_ranking << player2.elo_ranking << "\n";
 	float player1_elo_score{ 0.0 }, player2_elo_score{ 0.0 };
 	if (surface.contains("hard")) {
-		stream << std::left << std::setw(17) << "ELO_Hard" << std::left << std::setw(25) << player1.hard_elo_ranking << player2.hard_elo_ranking << "\n";
+		stream << std::left << std::setw(25) << "Hard Elo Rank:" << std::left << std::setw(25) << player1.hard_elo_ranking << player2.hard_elo_ranking << "\n";
 		player1_elo_score = player1.hard_elo_score;
 		player2_elo_score = player2.hard_elo_score;
 	}
 	else if (surface.contains("clay")) {
-		stream << std::left << std::setw(17) << "ELO_Clay:" << std::left << std::setw(25) << player1.clay_elo_ranking << player2.clay_elo_ranking << "\n";
+		stream << std::left << std::setw(25) << "Clay Elo Rank:" << std::left << std::setw(25) << player1.clay_elo_ranking << player2.clay_elo_ranking << "\n";
 		player1_elo_score = player1.clay_elo_score;
 		player2_elo_score = player2.clay_elo_score;
 	}
 	else {
-		stream << std::left << std::setw(17) << "ELO_Grass:" << std::left << std::setw(25) << player1.grass_elo_ranking << player2.grass_elo_ranking << "\n";
+		stream << std::left << std::setw(25) << "Grass Elo Rank:" << std::left << std::setw(25) << player1.grass_elo_ranking << player2.grass_elo_ranking << "\n";
 		player1_elo_score = player1.grass_elo_score;
 		player2_elo_score = player2.grass_elo_score;
 	}
-	std::ostringstream prob_stream;
-	prob_stream << std::setprecision(4);
-	float match_win_prob_for_p1 = (1 / (float)(1 + std::pow(10, ((player2_elo_score - player1_elo_score) / float(400)))))  * 100;
-	prob_stream << match_win_prob_for_p1 << "%";
-	std::string p1_win_prob_str = prob_stream.str();
-	prob_stream.str("");
 
-
-	float match_win_prob_for_p2{ 100 - match_win_prob_for_p1 };
-	prob_stream << match_win_prob_for_p2 << "%";
-	std::string p2_win_prob_str = prob_stream.str();
-	prob_stream.str("");
-
-	if (player1_elo_score != 0 && player2_elo_score != 0) {
-		stream << std::left << std::setw(17) << "Win Probability:" << std::left << std::setw(25) << p1_win_prob_str << p2_win_prob_str << "\n";
-	}
-	else
-		stream << std::left << std::setw(10) << "Win Probability:" << std::left << std::setw(25) << " " << " " << "\n\n";
+	// Calculate probabilities
+	auto [player1_game_win_prob, player1_set_prob, player1_match_win_prob] =
+		TennisEloPredictor::predictMatch(player1_elo_score, player2_elo_score, bestOf5);
 	
+	auto [player2_game_win_prob, player2_set_prob, player2_match_win_prob] =
+		TennisEloPredictor::predictMatch(player2_elo_score, player1_elo_score, bestOf5);
+
+	player1_game_win_prob *= 100;
+	player1_set_prob *= 100;
+	player1_match_win_prob *= 100;
+	
+	player2_game_win_prob *= 100;
+	player2_set_prob *= 100;
+	player2_match_win_prob *= 100;
+
+	// Estimate match length
+	auto [expectedGames, expectedSets] =
+		TennisEloPredictor::estimateMatchLength(player1_elo_score, player2_elo_score, bestOf5);
+
+	// Monte Carlo simulation
+	auto [player1Wins, avgGames, exampleSetScores] =
+		TennisEloPredictor::simulateMatch(player1_elo_score, player2_elo_score, bestOf5, 10000);
+
+	player1Wins /= 100.0;
+	double player2Wins = 100 - player1Wins;
+
+
+	std::ostringstream prob_stream;
+
+	prob_stream << player1_game_win_prob << "%";
+	std::string player1_game_win_prob_str = prob_stream.str();
+	prob_stream.str("");
+
+	prob_stream << player2_game_win_prob << "%";
+	std::string player2_game_win_prob_str = prob_stream.str();
+	prob_stream.str("");
+
+	prob_stream << player1_set_prob << "%";
+	std::string player1_set_prob_str = prob_stream.str();
+	prob_stream.str("");
+
+	prob_stream << player2_set_prob << "%";
+	std::string player2_set_prob_str = prob_stream.str();
+	prob_stream.str("");
+
+	prob_stream << player1_match_win_prob << "%";
+	std::string player1_match_win_prob_str = prob_stream.str();
+	prob_stream.str("");
+
+	prob_stream << player2_match_win_prob << "%";
+	std::string player2_match_win_prob_str = prob_stream.str();
+	prob_stream.str("");
+
+	prob_stream << player1Wins << "%";
+	std::string player1Wins_str = prob_stream.str();
+	prob_stream.str("");
+
+	prob_stream << player2Wins << "%";
+	std::string player2Wins_str = prob_stream.str();
+	prob_stream.str("");
+
+
+	stream << std::left << std::setw(25) << "Game win probability:" << std::left << std::setw(25) << player1_game_win_prob_str << player2_game_win_prob_str << "\n";
+	stream << std::left << std::setw(25) << "Set win probability:" << std::left << std::setw(25) << player1_set_prob_str << player2_set_prob_str << "\n";
+	stream << std::left << std::setw(25) << "Match win Probability:" << std::left << std::setw(25) << player1_match_win_prob_str << player2_match_win_prob_str << "\n";
+	stream << std::left << std::setw(25) << "simulated win rate:" << std::left << std::setw(25) << player1Wins_str << player2Wins_str << "\n";
+	stream << design << "\n\n";
 }
 
 
@@ -143,6 +167,9 @@ std::tuple<std::string, std::string> split_players_names(const std::string& line
 
 
 bool same_name(std::string str1, std::string str2) {
+	std::transform(std::begin(str1), std::end(str1), std::begin(str1), ::tolower);
+	std::transform(std::begin(str2), std::end(str2), std::begin(str2), ::tolower);
+
 	std::vector<std::string> str1_tokens{ split(str1, ' ') };
 	std::vector<std::string> str2_tokens{ split(str2, ' ') };
 
@@ -273,7 +300,7 @@ void process_tennis_file(std::string const& game_file_path) {
 	std::ostringstream stream;
 
 	char gender = 'M';
-	if (game_file_path.contains("ATP"))
+	if (game_file_path.contains("ATP") || game_file_path.contains("Challenger"))
 		profile_file.open(male_file, std::ios::in);
 	else {
 		gender = 'F';
@@ -320,10 +347,7 @@ void process_tennis_file(std::string const& game_file_path) {
 		SetConsoleTextAttribute(hConsole, text_color | FOREGROUND_INTENSITY);
 #endif // Change console color
 
-		//Display results
-		stream << design << "\n";
-		compare_profile(player_1, player_2, surface, stream);
-		stream << design << "\n\n";
+		print_player_stats(player_1, player_2, surface, stream, design, tournament);
 
 		std::cout << stream.str();
 

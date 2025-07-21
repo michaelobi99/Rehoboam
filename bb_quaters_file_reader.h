@@ -133,7 +133,7 @@ void split_quaters_score(std::string line, unsigned length, int& full_time_score
 
 
 void get_recommendation(float pred, float low, float high) {
-	const int max_dist_range = 25;
+	const int max_dist_range = 24;
 	bool good_pred = low <= pred && pred <= high;
 	bool tight_range = (int)(high - low) <= max_dist_range;
 	if (good_pred && tight_range) {
