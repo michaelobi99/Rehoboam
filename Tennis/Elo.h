@@ -178,19 +178,17 @@ public:
 		// Expected number of sets in the match
 		double expectedSets;
 		if (bestOf5) {
-			// For best of 5, calculate expected sets based on all possible outcomes
-			expectedSets = 3 * std::pow(setProb, 3) + 3 * std::pow(1 - setProb, 3) +
+			expectedSets = 3 * (std::pow(setProb, 3) + std::pow(1 - setProb, 3)) +
 				4 * (3 * std::pow(setProb, 3) * (1 - setProb) + 3 * setProb * std::pow(1 - setProb, 3)) +
-				5 * (3 * std::pow(setProb, 3) * std::pow(1 - setProb, 2) + 3 * std::pow(setProb, 2) * std::pow(1 - setProb, 3));
+				5 * (6 * std::pow(setProb, 3) * std::pow(1 - setProb, 2) + 6 * std::pow(setProb, 2) * std::pow(1 - setProb, 3));
 		}
 		else {
 			// For best of 3
-			expectedSets = 2 * std::pow(setProb, 2) + 2 * std::pow(1 - setProb, 2) +
-				3 * 2 * setProb * (1 - setProb);
+			expectedSets = 2 * (std::pow(setProb, 2) + std::pow(1 - setProb, 2)) +
+				3 * (2 * setProb * (1 - setProb));
 		}
 
-		// Expected games per set (approximately 10-13 games depending on closeness)
-		double gamesPerSet = 6.0 / gameProb + 6.0 / (1 - gameProb);  // Simplified estimation
+		double gamesPerSet = 6.0 / gameProb + 6.0 / (1 - gameProb);
 		gamesPerSet = min(13.0, max(6.0, gamesPerSet));
 
 		double expectedGames = expectedSets * gamesPerSet;
@@ -200,7 +198,7 @@ public:
 
 	// Simulate a match using Monte Carlo method
 	static std::tuple<int, int, std::vector<std::pair<int, int>>> simulateMatch(
-		double elo1, double elo2, bool bestOf5 = false, int simulations = 1000) {
+		double elo1, double elo2, bool bestOf5 = false, int simulations = 10000) {
 
 		double pointProb = calculatePointWinProbability_2(elo1, elo2, bestOf5);
 		//double pointProb = calculatePointWinProbability_1(elo1, elo2);
