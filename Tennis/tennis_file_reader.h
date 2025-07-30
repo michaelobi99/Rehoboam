@@ -9,9 +9,9 @@
 
 
 void print_player_stats(Player& player1, Player& player2, std::string surface, std::ostringstream& stream, std::string& design, std::string& tournament) {
-	/*if (player1.name.empty() || player2.name.empty()) return;
+	if (player1.name.empty() || player2.name.empty()) return;
 	if (player1.age == 0 || player2.age == 0) return;
-	if (player1.ranking == 0 || player2.ranking == 0) return;*/
+	if (player1.ranking == 0 || player2.ranking == 0) return;
 
 	bool bestOf5 = false;
 	std::vector<std::string> bestOf5Tournaments = { "French Open", "US Open", "Australian Open", "Wimbledon" };
