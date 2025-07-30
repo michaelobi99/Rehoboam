@@ -9,9 +9,9 @@
 
 
 void print_player_stats(Player& player1, Player& player2, std::string surface, std::ostringstream& stream, std::string& design, std::string& tournament) {
-	if (player1.name.empty() || player2.name.empty()) return;
+	/*if (player1.name.empty() || player2.name.empty()) return;
 	if (player1.age == 0 || player2.age == 0) return;
-	if (player1.ranking == 0 || player2.ranking == 0) return;
+	if (player1.ranking == 0 || player2.ranking == 0) return;*/
 
 	bool bestOf5 = false;
 	std::vector<std::string> bestOf5Tournaments = { "French Open", "US Open", "Australian Open", "Wimbledon" };
@@ -143,7 +143,18 @@ std::vector<std::string> split(const std::string& str, char delimiter) {
 
 std::string replace_char(const std::string& str, char ch) {
 	std::string result = str;
-	std::replace(result.begin(), result.end(), ch, ' ');
+	if (ch == '\'') {
+		int i = 0;
+		for (; i < std::size(str); ++i) {
+			if (result[i] == '\'') break;
+		}
+		if (i < std::size(result)) {
+			std::memmove(result.data() + i, result.data() + i + 1, std::size(result) - i);
+			result.pop_back();
+		}
+	}
+	else
+		std::replace(result.begin(), result.end(), ch, ' ');
 	return result;
 }
 
@@ -173,9 +184,14 @@ bool same_name(std::string str1, std::string str2) {
 	std::vector<std::string> str1_tokens{ split(str1, ' ') };
 	std::vector<std::string> str2_tokens{ split(str2, ' ') };
 
-	for (auto& str : str1_tokens) str = trim_(replace_char(str, '.'));
-	for (auto& str : str2_tokens) str = trim_(replace_char(str, '.'));
-
+	for (auto& str : str1_tokens) {
+		str = trim_(replace_char(str, '.'));
+		str = replace_char(str, '\'');
+	}
+	for (auto& str : str2_tokens) {
+		str = trim_(replace_char(str, '.'));
+		str = replace_char(str, '\'');
+	}
 
 	std::string longest_name{};
 	auto iter = std::max_element(str1_tokens.begin(), str1_tokens.end(),
@@ -191,7 +207,9 @@ bool same_name(std::string str1, std::string str2) {
 			break;
 		}
 	}
-	if (!found) return false;
+	if (!found) {
+		return false;
+	}
 
 	unsigned counter = 0;
 
@@ -279,6 +297,8 @@ std::tuple<Player, Player> make_players_profile(std::string player1, std::string
 				break;
 			}
 		}
+		//Players name not present in ELO top 400, try ATP top 1000.
+
 	}
 	
 	return std::make_tuple(players[0], players[1]);
@@ -291,6 +311,7 @@ void process_tennis_file(std::string const& game_file_path) {
 
 	std::string male_file = R"(C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\Tennis\men_elo_rankings.csv)";
 	std::string female_file = R"(C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\Tennis\women_elo_rankings.csv)";
+
 	std::fstream profile_file;
 
 	if (!file.is_open()) {
