@@ -114,6 +114,7 @@ void print_player_stats(Player& player1, Player& player2, std::string surface, s
 	stream << std::left << std::setw(25) << "Set win probability:" << std::left << std::setw(25) << player1_set_prob_str << player2_set_prob_str << "\n";
 	stream << std::left << std::setw(25) << "Match win Probability:" << std::left << std::setw(25) << player1_match_win_prob_str << player2_match_win_prob_str << "\n";
 	stream << std::left << std::setw(25) << "simulated win rate:" << std::left << std::setw(25) << player1Wins_str << player2Wins_str << "\n";
+	//stream << "Simulated number of games in match: " << avgGames << "\n";
 	stream << design << "\n\n";
 }
 
