@@ -7,6 +7,7 @@
 #include <tuple>
 #include <string>
 #include <fstream>
+#include <unordered_map>
 #include <iomanip>
 
 
@@ -185,7 +186,7 @@ public:
 		else {
 			// For best of 3
 			expectedSets = 2 * (std::pow(setProb, 2) + std::pow(1 - setProb, 2)) +
-				3 * (2 * setProb * (1 - setProb));
+				3 * 2 * setProb * (1 - setProb);
 		}
 
 		double gamesPerSet = 6.0 / gameProb + 6.0 / (1 - gameProb);
@@ -197,7 +198,7 @@ public:
 	}
 
 	// Simulate a match using Monte Carlo method
-	static std::tuple<int, int, std::vector<std::pair<int, int>>> simulateMatch(
+	static std::tuple<int, std::vector<int>, std::vector<std::pair<int, int>>> simulateMatch(
 		double elo1, double elo2, bool bestOf5 = false, int simulations = 10000) {
 
 		double pointProb = calculatePointWinProbability_2(elo1, elo2, bestOf5);
@@ -210,6 +211,7 @@ public:
 		int totalGames = 0;
 		int totalSets = 0;
 		std::vector<std::pair<int, int>> setScores;
+		std::unordered_map<int, int> totalGamesCount;
 
 		for (int sim = 0; sim < simulations; ++sim) {
 			int sets1 = 0, sets2 = 0;
@@ -228,13 +230,29 @@ public:
 			}
 
 			if (sets1 > sets2) player1Wins++;
-			totalGames += matchGames;
+			totalGamesCount[matchGames]++;
 			totalSets += sets1 + sets2;
 
 			if (sim == 0) setScores = matchSetScores; // Store first simulation as example
 		}
+		int mostOccuringGamesOutcome = 0;
+		struct SimulatedGames {
+			int games;
+			int count;
+		};
+		std::vector<SimulatedGames> simulatedGames(totalGamesCount.size());
+		int i = 0;
+		for (const auto& [games, count] : totalGamesCount) {
+			simulatedGames[i].games = games;
+			simulatedGames[i++].count = count;
+		}
+		std::sort(std::begin(simulatedGames), std::end(simulatedGames), [](SimulatedGames& a, SimulatedGames& b) {return a.count > b.count; });
+		std::vector<int> mostFreq(simulatedGames.size()/5);
+		for (int i = 0; i < mostFreq.size(); ++i) {
+			mostFreq[i] = simulatedGames[i].games;
+		}
 
-		return std::make_tuple(player1Wins, totalGames / simulations, setScores);
+		return std::make_tuple(player1Wins, mostFreq, setScores);
 	}
 
 

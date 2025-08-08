@@ -8,6 +8,7 @@ import time
 from time import sleep
 from contextlib import suppress
 import re
+from threading import Thread
 
 
 #.....................................................................................................................
@@ -46,97 +47,97 @@ def clean_text(text):
     
     return text.strip()
 
-def scrape_tennis_elo_rankings(url):
+def scrape_tennis_elo_rankings(urls):
     # URL for Tennis Abstract ATP ELO ratings
     
     # Headers to mimic a browser request
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
-    
-    try:
-        # Send GET request to the URL
-        print(f"Fetching data from {url}...")
-        response = requests.get(url, headers=headers)
-        
-        # Explicitly set encoding to handle special characters properly
-        response.encoding = 'utf-8'
-        
-        # Check if the request was successful
-        if response.status_code == 200:
-            print(f"Successfully retrieved the page: Status code {response.status_code}")
-            soup = BeautifulSoup(response.text, 'html.parser')
-            table = soup.find_all('table')
-            if not table:
-                print("Could not find the rankings table.")
-                return None
-            table = table[2]
+    for url in urls:
+        try:
+            # Send GET request to the URL
+            print(f"Fetching data from {url}...")
+            response = requests.get(url, headers=headers)
+            
+            # Explicitly set encoding to handle special characters properly
+            response.encoding = 'utf-8'
+            
+            # Check if the request was successful
+            if response.status_code == 200:
+                print(f"Successfully retrieved the page: Status code {response.status_code}")
+                soup = BeautifulSoup(response.text, 'html.parser')
+                table = soup.find_all('table')
+                if not table:
+                    print("Could not find the rankings table.")
+                    return None
+                table = table[2]
 
-            # Extract table headers
-            headers_list = []
-            header_row = table.find('tr')
-            if header_row:
-                headers_list = [clean_text(th.text) for th in header_row.find_all('th')]
-                headers_list = [string for string in headers_list if len(string) > 0]
-            
-            if not headers_list:
-                print("Could not find table headers.")
-                return None
-            
-            player_rows = table.find_all('tr')[1:]
-            
-            if not player_rows:
-                print("Could not find player rows.")
-                return None
-            
-            print(f"Found {len(player_rows)} player rows")
-            
-            # Prepare data structure
-            rankings_data = []
-            
-            for num, row in enumerate(player_rows):
-                try:
-                    # Extract all cells in the row and clean the text
-                    cells = [clean_text(x.text) for x in row.find_all(['td', 'th'])]
-                    cells = [string for string in cells if len(string) > 0]
-                    
-                    if len(cells) >= len(headers_list):
-                        player_data = {}
-                        for i, header in enumerate(headers_list):
-                            player_data[header] = cells[i]
+                # Extract table headers
+                headers_list = []
+                header_row = table.find('tr')
+                if header_row:
+                    headers_list = [clean_text(th.text) for th in header_row.find_all('th')]
+                    headers_list = [string for string in headers_list if len(string) > 0]
+                
+                if not headers_list:
+                    print("Could not find table headers.")
+                    return None
+                
+                player_rows = table.find_all('tr')[1:]
+                
+                if not player_rows:
+                    print("Could not find player rows.")
+                    return None
+                
+                print(f"Found {len(player_rows)} player rows")
+                
+                # Prepare data structure
+                rankings_data = []
+                
+                for num, row in enumerate(player_rows):
+                    try:
+                        # Extract all cells in the row and clean the text
+                        cells = [clean_text(x.text) for x in row.find_all(['td', 'th'])]
+                        cells = [string for string in cells if len(string) > 0]
                         
-                        rankings_data.append(player_data)
-                    else:
-                        print(f"Row {num+1} has fewer cells ({len(cells)}) than headers ({len(headers_list)})")
-                except Exception as e:
-                    print(f"Error extracting data from row: {e}")
-                    continue
-            
-            
-            # Save data to CSV
-            base = r"C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\Tennis"
-            atp_file = f"men_elo_rankings.csv"
-            wta_file = f"women_elo_rankings.csv"
-            csv_filename = os.path.join(base, atp_file) if 'atp' in url else os.path.join(base, wta_file)
-            
-            # Create directory if it doesn't exist
-            os.makedirs(os.path.dirname(csv_filename), exist_ok=True)
-            
-            with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=headers_list)
-                writer.writeheader()
-                for player_data in rankings_data:
-                    writer.writerow(player_data)
-            
-            print(f"Data saved to {csv_filename}")
-            
-        else:
-            print(f"Failed to retrieve the page. Status code: {response.status_code}")
+                        if len(cells) >= len(headers_list):
+                            player_data = {}
+                            for i, header in enumerate(headers_list):
+                                player_data[header] = cells[i]
+                            
+                            rankings_data.append(player_data)
+                        else:
+                            print(f"Row {num+1} has fewer cells ({len(cells)}) than headers ({len(headers_list)})")
+                    except Exception as e:
+                        print(f"Error extracting data from row: {e}")
+                        continue
+                
+                
+                # Save data to CSV
+                base = r"C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\Tennis"
+                atp_file = f"men_elo_rankings.csv"
+                wta_file = f"women_elo_rankings.csv"
+                csv_filename = os.path.join(base, atp_file) if 'atp' in url else os.path.join(base, wta_file)
+                
+                # Create directory if it doesn't exist
+                os.makedirs(os.path.dirname(csv_filename), exist_ok=True)
+                
+                with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
+                    writer = csv.DictWriter(csvfile, fieldnames=headers_list)
+                    writer.writeheader()
+                    for player_data in rankings_data:
+                        writer.writerow(player_data)
+                
+                print(f"Data saved to {csv_filename}")
+                
+            else:
+                print(f"Failed to retrieve the page. Status code: {response.status_code}")
+                return None
+        
+        except Exception as e:
+            print(f"An error occurred: {e}")
             return None
-    
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return None
 #........................................................................................................................
 
 def setup_driver():
@@ -208,9 +209,10 @@ def is_desired_tournament(match_element):
         surface = determine_surface_from_text(raw_text)
         
         desired_tournaments = [
-            # 'ATP',
-            # 'WTA',
+            'ATP',
+            'WTA',
             'CHALLENGER MEN'
+            # 'CHALLENGER WOMEN'
             # 'ITF Men',
             # 'ITF Women',
             # 'United Cup',
@@ -220,7 +222,7 @@ def is_desired_tournament(match_element):
         is_desired: bool = False
 
         for tournament in desired_tournaments:
-            if tournament in tournament_type and 'DOUBLE' not in tournament_type:
+            if tournament in tournament_type and 'DOUBLE' not in tournament_type and 'Qualification' not in tournament_name:
                 is_desired = True
 
         return (is_desired, tournament_name, tournament_type, surface)
@@ -234,10 +236,11 @@ def get_upcoming_matches(driver, day=0):
     
     if day == 1:
         next = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "button.calendar__navigation--tomorrow"))
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-day-picker-arrow='next']"))
         )
-        next = driver.find_element(By.CSS_SELECTOR, "button.calendar__navigation--tomorrow")
+        next = driver.find_element(By.CSS_SELECTOR, "button[data-day-picker-arrow='next']")
         driver.execute_script("arguments[0].click();", next)
+    
     sleep(2)
 
     try:
@@ -280,7 +283,7 @@ def get_upcoming_matches(driver, day=0):
     return upcoming
 
 def main():
-    day = 0  # 0 for today, 1 for next day matches
+    day = 0 # 0 for today, 1 for next day matches
     
     driver = setup_driver()
     try:
@@ -302,6 +305,9 @@ def main():
                 surface = 'grass'
 
             if (number+1) > last_saved:
+                tournament_str = match['tournament']
+                tournament_str = tournament_str.split('\n')[0]
+                time_str = match['time']
                 print(f'{number+1}/{number_of_matches}', '\r', end='')
                 player1 = match['player1']
                 player2 = match['player2']
@@ -309,18 +315,18 @@ def main():
 
                 file: str = ""
 
-                file = file1 if "ATP" in tournament_type else file2
-                if file == "":
+                if "ATP" in tournament_type:
+                    file = file1
+                elif "WTA" in tournament_type:
+                    file = file2
+                else:
                     file = file3
 
                 with open(file, 'a') as fileObj:
                     # Write in the new format: "player1" vs "player2"
                     fileObj.write(f'{player1} vs {player2}\n')
                     fileObj.write(f'{surface}\n')
-                    if "ATP" in tournament_type:
-                        fileObj.write(f'ATP\n')
-                    else:
-                        fileObj.write('WTA\n')
+                    fileObj.write(f'{tournament_type} - {tournament_str} - {time_str}\n\n')
                     
                 time.sleep(1)
              
@@ -330,6 +336,9 @@ def main():
         driver.quit()
 
 if __name__ == "__main__":
-    scrape_tennis_elo_rankings("https://tennisabstract.com/reports/atp_elo_ratings.html")
-    scrape_tennis_elo_rankings("https://tennisabstract.com/reports/wta_elo_ratings.html")
+    atp_elo_site = "https://tennisabstract.com/reports/atp_elo_ratings.html"
+    wta_elo_site = "https://tennisabstract.com/reports/wta_elo_ratings.html"
+    worker1 = Thread(target=scrape_tennis_elo_rankings, args= ((atp_elo_site, wta_elo_site),))
+    worker1.start()
     main()
+    worker1.join()

@@ -7,6 +7,32 @@
 #include <Windows.h>
 #endif
 
+struct PlayerATPRank {
+	std::string rank;
+	std::string name;
+};
+
+
+std::vector<PlayerATPRank> getRankings(const std::string& file) {
+	std::fstream fileObj(file, std::ios::in);
+	std::vector<PlayerATPRank> result;
+	std::string line;
+	std::getline(fileObj, line);
+	while (std::getline(fileObj, line)) {
+		std::string rank, name;
+		size_t pos = 0;
+		pos = line.find(',');
+		if (pos != std::string::npos)
+			rank = line.substr(0, pos);
+		line.erase(0, pos + 1);
+		pos = line.find(',');
+		if (pos != std::string::npos)
+			name = line.substr(0, pos);
+		result.emplace_back(PlayerATPRank{ rank, name });
+	}
+	return result;
+}
+
 
 void print_player_stats(Player& player1, Player& player2, std::string surface, std::ostringstream& stream, std::string& design, std::string& tournament) {
 	if (player1.name.empty() || player2.name.empty()) return;
@@ -114,7 +140,10 @@ void print_player_stats(Player& player1, Player& player2, std::string surface, s
 	stream << std::left << std::setw(25) << "Set win probability:" << std::left << std::setw(25) << player1_set_prob_str << player2_set_prob_str << "\n";
 	stream << std::left << std::setw(25) << "Match win Probability:" << std::left << std::setw(25) << player1_match_win_prob_str << player2_match_win_prob_str << "\n";
 	stream << std::left << std::setw(25) << "simulated win rate:" << std::left << std::setw(25) << player1Wins_str << player2Wins_str << "\n";
-	//stream << "Simulated number of games in match: " << avgGames << "\n";
+	stream << "Simulated number of games in match: ";
+	for (auto elem : avgGames)
+		stream << elem << ". ";
+	stream << "\n";
 	stream << design << "\n\n";
 }
 
@@ -225,7 +254,7 @@ bool same_name(std::string str1, std::string str2) {
 	return counter > 1;
 }
 
-std::tuple<Player, Player> make_players_profile(std::string player1, std::string player2, std::fstream& file, char gender) {
+std::tuple<Player, Player> make_players_profile(std::string player1, std::string player2, std::fstream& file, const std::vector<PlayerATPRank>& atp_file, char gender) {
 	std::string line;
 	std::vector<Player> players(2);
 
@@ -256,7 +285,13 @@ std::tuple<Player, Player> make_players_profile(std::string player1, std::string
 					unsigned elo_rank = static_cast<unsigned>(std::stoi(trim(fields[0])));     // Elo Rank
 					double age_double = std::stod(trim(fields[2]));                            // Age
 					unsigned age = static_cast<unsigned>(age_double);
-					unsigned atp_rank = static_cast<unsigned>(std::stoi(trim(fields[12])));   // ATP Rank
+					unsigned atp_rank;
+					for (auto player : atp_file) {
+						if (same_name(player1, player.name)) {
+							atp_rank = std::stoi(trim(player.rank));   // ATP Rank
+							break;
+						}
+					}
 					unsigned hard_elo_rank = static_cast<unsigned>(std::stoi(trim(fields[4]))); // hElo Rank
 					unsigned clay_elo_rank = static_cast<unsigned>(std::stoi(trim(fields[6]))); // cElo Rank  
 					unsigned grass_elo_rank = static_cast<unsigned>(std::stoi(trim(fields[8]))); // gElo Rank
@@ -277,7 +312,14 @@ std::tuple<Player, Player> make_players_profile(std::string player1, std::string
 					unsigned elo_rank = static_cast<unsigned>(std::stoi(trim(fields[0])));     // Elo Rank
 					double age_double = std::stod(trim(fields[2]));                            // Age
 					unsigned age = static_cast<unsigned>(age_double);
-					unsigned atp_rank = static_cast<unsigned>(std::stoi(trim(fields[12])));   // ATP Rank
+					unsigned atp_rank;
+					for (auto player : atp_file) {
+						if (same_name(player2, player.name)) {
+							atp_rank = std::stoi(trim(player.rank));   // ATP Rank
+							break;
+						}
+							
+					}
 					unsigned hard_elo_rank = static_cast<unsigned>(std::stoi(trim(fields[4]))); // hElo Rank
 					unsigned clay_elo_rank = static_cast<unsigned>(std::stoi(trim(fields[6]))); // cElo Rank  
 					unsigned grass_elo_rank = static_cast<unsigned>(std::stoi(trim(fields[8]))); // gElo Rank
@@ -312,8 +354,14 @@ void process_tennis_file(std::string const& game_file_path) {
 
 	std::string male_file = R"(C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\Tennis\men_elo_rankings.csv)";
 	std::string female_file = R"(C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\Tennis\women_elo_rankings.csv)";
+	std::string male_atp_file = R"(C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\Tennis\atp_live_rankings.csv)";
+	std::string women_atp_file = R"(C:\Users\HP\source\repos\Rehoboam\Rehoboam\Data\Tennis\wta_live_rankings.csv)";
 
 	std::fstream profile_file;
+
+	std::vector<PlayerATPRank> men_rank(getRankings(male_atp_file));
+	std::vector<PlayerATPRank> women_rank(getRankings(women_atp_file));
+	
 
 	if (!file.is_open()) {
 		std::cerr << "Failed to open file\n";
@@ -342,7 +390,8 @@ void process_tennis_file(std::string const& game_file_path) {
 
 		auto [player1, player2] = split_players_names(players_string.c_str());
 
-		auto [player_1, player_2] = make_players_profile(player1, player2, profile_file, gender);
+		auto [player_1, player_2] = gender == 'M' ? make_players_profile(player1, player2, profile_file, men_rank, gender) :
+			make_players_profile(player1, player2, profile_file, women_rank, gender);
 #ifdef _MSC_VER
 		std::random_device rd{};
 		auto mtgen = std::mt19937{ rd() };
