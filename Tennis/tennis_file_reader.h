@@ -1,8 +1,6 @@
 #include "Elo.h"
 #include <algorithm>
 
-
-
 #ifdef _MSC_VER
 #include <Windows.h>
 #endif
@@ -11,28 +9,6 @@ struct PlayerATPRank {
 	std::string rank;
 	std::string name;
 };
-
-
-std::vector<PlayerATPRank> getRankings(const std::string& file) {
-	std::fstream fileObj(file, std::ios::in);
-	std::vector<PlayerATPRank> result;
-	std::string line;
-	std::getline(fileObj, line);
-	while (std::getline(fileObj, line)) {
-		std::string rank, name;
-		size_t pos = 0;
-		pos = line.find(',');
-		if (pos != std::string::npos)
-			rank = line.substr(0, pos);
-		line.erase(0, pos + 1);
-		pos = line.find(',');
-		if (pos != std::string::npos)
-			name = line.substr(0, pos);
-		result.emplace_back(PlayerATPRank{ rank, name });
-	}
-	return result;
-}
-
 
 void print_player_stats(Player& player1, Player& player2, std::string surface, std::ostringstream& stream, std::string& design, std::string& tournament) {
 	if (player1.name.empty() || player2.name.empty()) return;
@@ -346,6 +322,29 @@ std::tuple<Player, Player> make_players_profile(std::string player1, std::string
 	
 	return std::make_tuple(players[0], players[1]);
 }
+
+std::vector<PlayerATPRank> getRankings(const std::string& file) {
+	std::fstream fileObj(file, std::ios::in);
+	std::vector<PlayerATPRank> result;
+	std::string line;
+	std::getline(fileObj, line);
+	while (std::getline(fileObj, line)) {
+		std::string rank, name;
+		size_t pos = 0;
+		pos = line.find(',');
+		if (pos != std::string::npos)
+			rank = line.substr(0, pos);
+		line.erase(0, pos + 1);
+		pos = line.find(',');
+		if (pos != std::string::npos) {
+			name = trim_(replace_char(line.substr(0, pos), '-'));
+		}
+		
+		result.emplace_back(PlayerATPRank{ rank, name });
+	}
+	return result;
+}
+
 
 void process_tennis_file(std::string const& game_file_path) {
 	std::string players_string{ "" }, surface{ "" }, tournament{ "" };
