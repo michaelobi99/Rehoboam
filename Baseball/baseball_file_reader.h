@@ -98,7 +98,7 @@ void read_and_process_file(std::string const& file_path) {
 		std::cout << match_string << " - " << match_details << "\n";
 		std::cout << design << "\n";
 
-		const char* str1 = "Likely point range";
+		const char* str1 = "Confidence Interval";
 		const char* str2 = "Recent game points";
 		std::cout << std::setw(25) << std::right << str1 << "\n";
 
@@ -106,7 +106,7 @@ void read_and_process_file(std::string const& file_path) {
 		stream << "Home: ";
 		printf("%-5s", stream.str().c_str());
 		stream.str("");
-		stream << "(" << home_lower << " - " << home_upper << ")";
+		stream << "[" << home_lower << " - " << home_upper << "]";
 		printf("%s\n", stream.str().c_str());
 		stream.str("");
 
@@ -114,7 +114,7 @@ void read_and_process_file(std::string const& file_path) {
 		stream << "Away: ";
 		printf("%-5s", stream.str().c_str());
 		stream.str("");
-		stream << "(" << away_lower << " - " << away_upper << ")";
+		stream << "[" << away_lower << " - " << away_upper << "]";
 		printf("%s\n", stream.str().c_str());
 		stream.str("");
 
@@ -122,7 +122,7 @@ void read_and_process_file(std::string const& file_path) {
 		stream << "H2H : ";
 		printf("%-5s", stream.str().c_str());
 		stream.str("");
-		stream << "(" << home_lower + away_lower << " - " << home_upper + away_upper << ")";
+		stream << "[" << home_lower + away_lower << " - " << home_upper + away_upper << "]";
 		printf("%s\n\n", stream.str().c_str());
 		stream.str("");
 

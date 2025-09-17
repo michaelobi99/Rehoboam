@@ -176,8 +176,7 @@ int getTailProbabilityIndex(std::string confidence_level) {
 std::tuple<float, float> t_dist(size_t n, float mean, float stddev, float confidence_level = 0.95) {
 	unsigned degrees_of_freedom = (n - 1);
 	if (degrees_of_freedom > 29) {
-		printf("Error: Number of samples exceed optimal number for t-distribution");
-		exit(1);
+		return std::tuple{ 0 , 0 };;
 	}
 	std::string string = std::to_string(confidence_level);
 	std::string conf_as_str = string + ((string.size() >= 5) ? "" : std::string(5 - string.size(), '0'));

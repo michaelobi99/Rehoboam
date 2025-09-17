@@ -106,7 +106,7 @@ void get_h2h_score_count(std::string const& line, unsigned& count) {
 	return;
 }
 
-void split_quaters_score(std::string line, unsigned length, int& full_time_score, int& q1_score, int& q2_score, int& q3_score, int& q4_score) {
+void split_quaters_score(std::string line, int& full_time_score, int& q1_score, int& q2_score, int& q3_score, int& q4_score, int& ot_score, bool& home) {
 	unsigned index = 0;
 	while (!std::isdigit(line[index])) index++;
 
@@ -123,26 +123,27 @@ void split_quaters_score(std::string line, unsigned length, int& full_time_score
 			}
 		}
 	}
-
 	full_time_score = row[0];
 	q1_score += row[1];
 	q2_score += row[2];
 	q3_score += row[3];
 	q4_score += row[4];
+	ot_score += row[5];
+	home = row[6] == 1;
 }
 
 
-void get_recommendation(float pred, float low, float high) {
-	const int max_dist_range = 24;
-	bool good_pred = low <= pred && pred <= high;
-	bool tight_range = (int)(high - low) <= max_dist_range;
-	if (good_pred && tight_range) {
-		printf("CONFIDENCE: HIGH\n\n");
-	}
-	else {
-		printf("CONFIDENCE: LOW\n\n");
-	}
-}
+//void get_recommendation(float pred, float low, float high) {
+//	const int max_dist_range = 24;
+//	bool good_pred = low <= pred && pred <= high;
+//	bool tight_range = (int)(high - low) <= max_dist_range;
+//	if (good_pred && tight_range) {
+//		printf("CONFIDENCE: HIGH\n\n");
+//	}
+//	else {
+//		printf("CONFIDENCE: LOW\n\n");
+//	}
+//}
 
 float combine_predictions(float pred_1, float pred_2, float pred_3) {
 	return (1/3.f) * (pred_1 + pred_2 + pred_3);
@@ -181,16 +182,22 @@ void read_and_process_quaters_file(std::string const& file_path) {
 		get_h2h_score_count(line, h2h_scores_count);
 		std::vector<int> home_h2h_scores(h2h_scores_count, 0);
 		std::vector<int> away_h2h_scores(h2h_scores_count, 0);
-		std::vector<std::vector<int>> quaters_score(h2h_scores_count, std::vector<int>(4, 0));
+		std::vector<std::vector<int>> quaters_score(h2h_scores_count, std::vector<int>(6, 0));
+
+		std::vector<unsigned> who_was_home(h2h_scores_count, 0);
 
 		for (unsigned i{ 0 }; i < h2h_scores_count; ++i) {
 			line.clear();
+			bool home_was_home = false;
+			bool away_was_home = false;
 			while (std::getline(file, line) && line.size() <= 1) continue;
-			split_quaters_score(line, line.length(), home_h2h_scores[i], quaters_score[i][0], quaters_score[i][1], quaters_score[i][2], quaters_score[i][3]);
+			split_quaters_score(line, home_h2h_scores[i], quaters_score[i][0], quaters_score[i][1], quaters_score[i][2], quaters_score[i][3], quaters_score[i][4], home_was_home);
 			line.clear();
 			while (std::getline(file, line) && line.size() <= 1) continue;
-			split_quaters_score(line, line.length(), away_h2h_scores[i], quaters_score[i][0], quaters_score[i][1], quaters_score[i][2], quaters_score[i][3]);
+			split_quaters_score(line, away_h2h_scores[i], quaters_score[i][0], quaters_score[i][1], quaters_score[i][2], quaters_score[i][3], quaters_score[i][4], away_was_home);
+			who_was_home[i] = home_was_home ? 1 : 2;
 		}
+
 		match_details.clear();
 		while (std::getline(file, match_details) && match_details.size() <= 1) continue;
 
@@ -251,12 +258,12 @@ void read_and_process_quaters_file(std::string const& file_path) {
 #endif // Change console color
 
 		//Display results
-		std::string design(80, '-');
+		std::string design(90, '-');
 		std::cout << design << "\n";
 		std::cout << match_string << " - " << match_details << "\n";
 		std::cout << design << "\n";
 
-		const char* str1 = "Likely point range";
+		const char* str1 = "Confidence Interval";
 		const char* str2 = "Recent game points";
 		std::cout << std::setw(25) << std::right << str1 << "\n";
 
@@ -264,7 +271,7 @@ void read_and_process_quaters_file(std::string const& file_path) {
 		stream << "Home: ";
 		printf("%-5s", stream.str().c_str());
 		stream.str("");
-		stream << "(" << home_lower << " - " << home_upper << ")";
+		stream << "[" << home_lower << " - " << home_upper << "]";
 		printf("%s\n", stream.str().c_str());
 		stream.str("");
 
@@ -272,7 +279,7 @@ void read_and_process_quaters_file(std::string const& file_path) {
 		stream << "Away: ";
 		printf("%-5s", stream.str().c_str());
 		stream.str("");
-		stream << "(" << away_lower << " - " << away_upper << ")";
+		stream << "[" << away_lower << " - " << away_upper << "]";
 		printf("%s\n", stream.str().c_str());
 		stream.str("");
 
@@ -280,7 +287,7 @@ void read_and_process_quaters_file(std::string const& file_path) {
 		stream << "H2H : ";
 		printf("%-5s", stream.str().c_str());
 		stream.str("");
-		stream << "(" << home_lower + away_lower << " - " << home_upper + away_upper << ")";
+		stream << "[" << home_lower + away_lower << " - " << home_upper + away_upper << "]";
 		printf("%s\n\n", stream.str().c_str());
 		stream.str("");
 
@@ -306,21 +313,21 @@ void read_and_process_quaters_file(std::string const& file_path) {
 
 		printf("%s", stream.str().c_str());
 
-		get_recommendation(total, home_lower + away_lower, home_upper + away_upper);
+		//get_recommendation(total, home_lower + away_lower, home_upper + away_upper);
 
 		//...................................................................................................................................................
 
 		// Determine max size for iteration
 		if (h2h_scores_count > 0) {
 			printf("Recent H2H results\n");
-			printf("%-8s%-8s%-8s%-8s%-8s%-8s%-8s%-8s%-8s\n", "Home ", "Away ", "Total", "H1", "H2", "Q1", "Q2", "Q3", "Q4");
+			printf("%-8s%-8s%-8s%-8s%-8s%-8s%-8s%-8s%-8s%-8s%-8s\n", "Home ", "Away ", "Total", "H1", "H2", "Q1", "Q2", "Q3", "Q4", "OT", "HOME TEAM");
 			std::cout << design << "\n";
 
 		
 			int total = 0;
 			for (size_t i = 0; i < h2h_scores_count; ++i) {
-				printf("%-8d%-8d%-8d%-8d%-8d%-8d%-8d%-8d%-8d\n", home_h2h_scores[i], away_h2h_scores[i], home_h2h_scores[i] + away_h2h_scores[i], quaters_score[i][0] + quaters_score[i][1],
-					quaters_score[i][2] + quaters_score[i][3], quaters_score[i][0], quaters_score[i][1], quaters_score[i][2], quaters_score[i][3]);
+				printf("%-8d%-8d%-8d%-8d%-8d%-8d%-8d%-8d%-8d%-8d%4d\n", home_h2h_scores[i], away_h2h_scores[i], home_h2h_scores[i] + away_h2h_scores[i], quaters_score[i][0] + quaters_score[i][1],
+					quaters_score[i][2] + quaters_score[i][3], quaters_score[i][0], quaters_score[i][1], quaters_score[i][2], quaters_score[i][3], quaters_score[i][4], who_was_home[i]);
 			}
 		}
 

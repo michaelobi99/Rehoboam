@@ -247,9 +247,10 @@ public:
 			simulatedGames[i++].count = count;
 		}
 		std::sort(std::begin(simulatedGames), std::end(simulatedGames), [](SimulatedGames& a, SimulatedGames& b) {return a.count > b.count; });
-		std::vector<int> mostFreq(simulatedGames.size()/5);
+		std::vector<int> mostFreq(5);
 		for (int i = 0; i < mostFreq.size(); ++i) {
-			mostFreq[i] = simulatedGames[i].games;
+			if (i < simulatedGames.size())
+			 mostFreq[i] = simulatedGames[i].games;
 		}
 
 		return std::make_tuple(player1Wins, mostFreq, setScores);

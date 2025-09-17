@@ -158,7 +158,7 @@ void read_and_process_fulltime_file(std::string const& file_path) {
 
 		printf("%s", stream.str().c_str());
 
-		get_recommendation(total, home_lower + away_lower, home_upper + away_upper);
+		//get_recommendation(total, home_lower + away_lower, home_upper + away_upper);
 
 		// Determine max size for iteration
 		if (home_h2h_scores.size() > 0) {
