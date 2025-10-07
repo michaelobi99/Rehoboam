@@ -268,12 +268,13 @@ private:
 		return result;
 	}
 
+
 	// Simulate a single set
 	static std::pair<int, int> simulateSet(double pointProb, std::mt19937& gen,
 		std::uniform_real_distribution<>& dis) {
 		int games1 = 0, games2 = 0;
 
-		while ((games1 < 6 && games2 < 6) || std::abs(games1 - games2) < 2) {
+		while (!((games1 >= 6 || games2 >= 6) && std::abs(games1 - games2) >= 2)) {
 			if (games1 == 6 && games2 == 6) {
 				// Tiebreak
 				if (simulateTiebreak(pointProb, gen, dis)) games1++;
@@ -295,7 +296,7 @@ private:
 	}
 
 	// Simulate a single game
-	static bool simulateGame(double pointProb, std::mt19937& gen,
+	/*static bool simulateGame(double pointProb, std::mt19937& gen,
 		std::uniform_real_distribution<>& dis) {
 		int points1 = 0, points2 = 0;
 
@@ -305,6 +306,23 @@ private:
 
 			if (points1 >= 4 && points1 - points2 >= 2) return true;
 			if (points2 >= 4 && points2 - points1 >= 2) return false;
+		}
+	}*/
+
+	// Simulate a single game
+	static bool simulateGame(double pointProb, std::mt19937& gen,
+		std::uniform_real_distribution<>& dis) {
+		int points1 = 0, points2 = 0;
+
+		while (true) {
+			if (dis(gen) < pointProb) points1++;
+			else points2++;
+
+			if (points1 == 4 && (points1 - points2) >= 2) return true;
+			if (points2 == 4 && (points2 - points1) >= 2) return false;
+			if (points1 == 3 && points2 == 3) {
+				return simulateDeuce(pointProb, gen, dis);
+			}
 		}
 	}
 
@@ -319,6 +337,20 @@ private:
 
 			if (points1 >= 7 && points1 - points2 >= 2) return true;
 			if (points2 >= 7 && points2 - points1 >= 2) return false;
+		}
+	}
+
+	static bool simulateDeuce(double pointProb, std::mt19937& gen, std::uniform_real_distribution<>& dis) {
+		int adv = 0;
+		int rallies = 0;
+		while (true) {
+			++rallies;
+			if (dis(gen) < pointProb) adv++;
+			else adv--;
+
+			if (adv == 2) return true;   // player1 wins
+			if (adv == -2) return false; // player2 wins
+			if (rallies == 15) return pointProb > 0.5;
 		}
 	}
 };
