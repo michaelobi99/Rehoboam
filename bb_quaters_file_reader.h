@@ -258,7 +258,7 @@ void read_and_process_quaters_file(std::string const& file_path) {
 #endif // Change console color
 
 		//Display results
-		std::string design(90, '-');
+		std::string design(75, '-');
 		std::cout << design << "\n";
 		std::cout << match_string << " - " << match_details << "\n";
 		std::cout << design << "\n";
@@ -320,13 +320,13 @@ void read_and_process_quaters_file(std::string const& file_path) {
 		// Determine max size for iteration
 		if (h2h_scores_count > 0) {
 			printf("Recent H2H results\n");
-			printf("%-8s%-8s%-8s%-8s%-8s%-8s%-8s%-8s%-8s%-8s%-8s\n", "Home ", "Away ", "Total", "H1", "H2", "Q1", "Q2", "Q3", "Q4", "OT", "HOME TEAM");
+			printf("%-6s%-6s%-6s%-6s%-6s%-6s%-6s%-6s%-6s%-6s%-6s\n", "Home ", "Away ", "Total", "H1", "H2", "Q1", "Q2", "Q3", "Q4", "OT", "HOME TEAM");
 			std::cout << design << "\n";
 
 		
 			int total = 0;
 			for (size_t i = 0; i < h2h_scores_count; ++i) {
-				printf("%-8d%-8d%-8d%-8d%-8d%-8d%-8d%-8d%-8d%-8d%4d\n", home_h2h_scores[i], away_h2h_scores[i], home_h2h_scores[i] + away_h2h_scores[i], quaters_score[i][0] + quaters_score[i][1],
+				printf("%-6d%-6d%-6d%-6d%-6d%-6d%-6d%-6d%-6d%-6d%4d\n", home_h2h_scores[i], away_h2h_scores[i], home_h2h_scores[i] + away_h2h_scores[i], quaters_score[i][0] + quaters_score[i][1],
 					quaters_score[i][2] + quaters_score[i][3], quaters_score[i][0], quaters_score[i][1], quaters_score[i][2], quaters_score[i][3], quaters_score[i][4], who_was_home[i]);
 			}
 		}

@@ -31,7 +31,7 @@ float standard_deviation(const std::vector<int>& scores, float mean) {
 	for (unsigned i{ 0 }; i < size; ++i) {
 		sum_squared_diff += std::pow((mean - scores[i]), 2);
 	}
-	float stddev = std::sqrt(sum_squared_diff / (float)size - 1);
+	float stddev = std::sqrt(sum_squared_diff / (float)(size - 1));
 	return stddev;
 }
 //............................................................................................................................................................
@@ -173,10 +173,10 @@ int getTailProbabilityIndex(std::string confidence_level) {
 	exit(1);
 }
 
-std::tuple<float, float> t_dist(size_t n, float mean, float stddev, float confidence_level = 0.95) {
+std::tuple<float, float> t_dist(size_t n, float mean, float stddev, float confidence_level = 0.98) {
 	unsigned degrees_of_freedom = (n - 1);
 	if (degrees_of_freedom > 29) {
-		return std::tuple{ 0 , 0 };;
+		return std::tuple{ 0 , 0 };
 	}
 	std::string string = std::to_string(confidence_level);
 	std::string conf_as_str = string + ((string.size() >= 5) ? "" : std::string(5 - string.size(), '0'));
