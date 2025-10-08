@@ -79,6 +79,7 @@ std::vector<int> moving_median_smoother(std::vector<int> const& scores, int wind
 float simple_linear_regression(const std::vector<int>& scores) {
 	if (scores.empty()) return 0;
 	if (scores.size() < 2) return scores[0];
+	if (scores.size() < 5) return mean(scores);
 
 	int N = scores.size() - 1; // One less for pairs of (x,y)
 	std::vector<int> x(scores.rbegin(), scores.rend() - 1); // previous scores

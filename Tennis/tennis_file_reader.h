@@ -69,7 +69,7 @@ void print_player_stats(Player& player1, Player& player2, std::string surface, s
 		TennisEloPredictor::estimateMatchLength(player1_elo_score, player2_elo_score, bestOf5);
 
 	// Monte Carlo simulation
-	auto [player1Wins, avgGames, exampleSetScores] =
+	auto [player1Wins, avgGames, avgFirstSetGames] =
 		TennisEloPredictor::simulateMatch(player1_elo_score, player2_elo_score, bestOf5, 10000);
 
 	player1Wins /= 100.0;
@@ -115,7 +115,11 @@ void print_player_stats(Player& player1, Player& player2, std::string surface, s
 	stream << std::left << std::setw(25) << "Set win probability:" << std::left << std::setw(25) << player1_set_prob_str << player2_set_prob_str << "\n";
 	stream << std::left << std::setw(25) << "Match win Probability:" << std::left << std::setw(25) << player1_match_win_prob_str << player2_match_win_prob_str << "\n";
 	stream << std::left << std::setw(25) << "simulated win rate:" << std::left << std::setw(25) << player1Wins_str << player2Wins_str << "\n";
-	stream << "Simulated number of games in match: ";
+	stream << "Simulated first set games: ";
+	for (auto elem : avgFirstSetGames)
+		stream << elem << ". ";
+	stream << "\n";
+	stream << "Simulated total match games: ";
 	for (auto elem : avgGames)
 		stream << elem << ". ";
 	stream << "\n";

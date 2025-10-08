@@ -198,7 +198,7 @@ public:
 	}
 
 	// Simulate a match using Monte Carlo method
-	static std::tuple<int, std::vector<int>, std::vector<std::pair<int, int>>> simulateMatch(
+	static std::tuple<int, std::vector<int>, std::vector<int>> simulateMatch(
 		double elo1, double elo2, bool bestOf5 = false, int simulations = 100000) {
 
 		double pointProb = calculatePointWinProbability_2(elo1, elo2, bestOf5);
@@ -212,18 +212,23 @@ public:
 		int totalSets = 0;
 		std::vector<std::pair<int, int>> setScores;
 		std::unordered_map<int, int> totalGamesCount;
+		std::unordered_map<int, int> firstSetGamesCount;
 
 		for (int sim = 0; sim < simulations; ++sim) {
 			int sets1 = 0, sets2 = 0;
 			int matchGames = 0;
-			std::vector<std::pair<int, int>> matchSetScores;
 
 			int setsToWin = bestOf5 ? 3 : 2;
-
+			bool firstSet = true;
+			int firstSetGames;
 			while (sets1 < setsToWin && sets2 < setsToWin) {
 				auto [games1, games2] = simulateSet(pointProb, gen, dis);
+				if (firstSet) {
+					int firstSetGames = games1 + games2;
+					firstSetGamesCount[firstSetGames]++;
+					firstSet = false;
+				}
 				matchGames += games1 + games2;
-				matchSetScores.push_back({ games1, games2 });
 
 				if (games1 > games2) sets1++;
 				else sets2++;
@@ -232,28 +237,41 @@ public:
 			if (sets1 > sets2) player1Wins++;
 			totalGamesCount[matchGames]++;
 			totalSets += sets1 + sets2;
-
-			if (sim == 0) setScores = matchSetScores; // Store first simulation as example
 		}
-		int mostOccuringGamesOutcome = 0;
-		struct SimulatedGames {
-			int games;
-			int count;
+
+		auto mostOccurringGames = [](const std::unordered_map<int, int>& games) {
+			int mostOccuringGamesOutcome = 0;
+			struct SimulatedGames {
+				int game;
+				int count;
+			};
+			std::vector<SimulatedGames> simulatedGames(games.size());
+			int i = 0;
+			for (const auto& [game, count] : games) {
+				simulatedGames[i].game = game;
+				simulatedGames[i++].count = count;
+			}
+			std::sort(std::begin(simulatedGames), std::end(simulatedGames), [](SimulatedGames& a, SimulatedGames& b) {return a.count > b.count; });	
+			return simulatedGames;
 		};
-		std::vector<SimulatedGames> simulatedGames(totalGamesCount.size());
-		int i = 0;
-		for (const auto& [games, count] : totalGamesCount) {
-			simulatedGames[i].games = games;
-			simulatedGames[i++].count = count;
-		}
-		std::sort(std::begin(simulatedGames), std::end(simulatedGames), [](SimulatedGames& a, SimulatedGames& b) {return a.count > b.count; });
-		std::vector<int> mostFreq(5);
-		for (int i = 0; i < mostFreq.size(); ++i) {
-			if (i < simulatedGames.size())
-			 mostFreq[i] = simulatedGames[i].games;
-		}
+		
 
-		return std::make_tuple(player1Wins, mostFreq, setScores);
+		std::vector<int> mostFreqTotalGames(5);
+		std::vector<int> mostFreqFirstSetGames(3);
+
+		int count = 0;
+		for (const auto& [g, c] : mostOccurringGames(totalGamesCount)) {
+			mostFreqTotalGames[count++] = g;
+			if (count == mostFreqTotalGames.size()) break;
+		}
+		count = 0;
+		for (const auto& [g, c] : mostOccurringGames(firstSetGamesCount)) {
+			mostFreqFirstSetGames[count++] = g;
+			if (count == mostFreqFirstSetGames.size()) break;
+		}
+		
+
+		return std::make_tuple(player1Wins, mostFreqTotalGames, mostFreqFirstSetGames);
 	}
 
 
@@ -343,6 +361,7 @@ private:
 	static bool simulateDeuce(double pointProb, std::mt19937& gen, std::uniform_real_distribution<>& dis) {
 		int adv = 0;
 		int rallies = 0;
+		const int max_rallies = 20;
 		while (true) {
 			++rallies;
 			if (dis(gen) < pointProb) adv++;
@@ -350,7 +369,7 @@ private:
 
 			if (adv == 2) return true;   // player1 wins
 			if (adv == -2) return false; // player2 wins
-			if (rallies == 15) return pointProb > 0.5;
+			if (rallies == max_rallies) return pointProb > 0.5;
 		}
 	}
 };
