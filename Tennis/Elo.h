@@ -199,7 +199,7 @@ public:
 
 	// Simulate a match using Monte Carlo method
 	static std::tuple<int, std::vector<int>, std::vector<int>> simulateMatch(
-		double elo1, double elo2, bool bestOf5 = false, int simulations = 100000) {
+		double elo1, double elo2, bool bestOf5 = false, int simulations = 1000000) {
 
 		double pointProb = calculatePointWinProbability_2(elo1, elo2, bestOf5);
 		//double pointProb = calculatePointWinProbability_1(elo1, elo2);
