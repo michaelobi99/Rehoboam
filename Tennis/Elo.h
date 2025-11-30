@@ -198,7 +198,7 @@ public:
 	}
 
 	// Simulate a match using Monte Carlo method
-	static std::tuple<int, std::vector<int>, std::vector<int>> simulateMatch(
+	static std::tuple<int, std::vector<int>, std::vector<double>, std::vector<int>> simulateMatch(
 		double elo1, double elo2, bool bestOf5 = false, int simulations = 1000000) {
 
 		double pointProb = calculatePointWinProbability_2(elo1, elo2, bestOf5);
@@ -257,11 +257,13 @@ public:
 		
 
 		std::vector<int> mostFreqTotalGames(5);
-		std::vector<int> mostFreqFirstSetGames(3);
+		std::vector<int> mostFreqFirstSetGames(5);
+		std::vector<double> gameProbability(5);
 
 		int count = 0;
 		for (const auto& [g, c] : mostOccurringGames(totalGamesCount)) {
-			mostFreqTotalGames[count++] = g;
+			mostFreqTotalGames[count] = g;
+			gameProbability[count++] = (c / (float)simulations) * 100;
 			if (count == mostFreqTotalGames.size()) break;
 		}
 		count = 0;
@@ -271,7 +273,7 @@ public:
 		}
 		
 
-		return std::make_tuple(player1Wins, mostFreqTotalGames, mostFreqFirstSetGames);
+		return std::make_tuple(player1Wins, mostFreqTotalGames, gameProbability, mostFreqFirstSetGames);
 	}
 
 

@@ -174,7 +174,7 @@ int getTailProbabilityIndex(std::string confidence_level) {
 	exit(1);
 }
 
-std::tuple<float, float> t_dist(size_t n, float mean, float stddev, float confidence_level = 0.98) {
+std::tuple<float, float> t_dist(size_t n, float mean, float stddev, float confidence_level = 0.95) {
 	unsigned degrees_of_freedom = (n - 1);
 	if (degrees_of_freedom > 29) {
 		return std::tuple{ 0 , 0 };
