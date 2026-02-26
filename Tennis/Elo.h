@@ -198,7 +198,7 @@ public:
 	}
 
 	// Simulate a match using Monte Carlo method
-	static std::tuple<int, std::vector<int>, std::vector<double>, std::vector<int>> simulateMatch(
+	static std::tuple<int, double, double> simulateMatch(
 		double elo1, double elo2, bool bestOf5 = false, int simulations = 1000000) {
 
 		double pointProb = calculatePointWinProbability_2(elo1, elo2, bestOf5);
@@ -239,41 +239,24 @@ public:
 			totalSets += sets1 + sets2;
 		}
 
-		auto mostOccurringGames = [](const std::unordered_map<int, int>& games) {
-			int mostOccuringGamesOutcome = 0;
-			struct SimulatedGames {
-				int game;
-				int count;
-			};
-			std::vector<SimulatedGames> simulatedGames(games.size());
-			int i = 0;
-			for (const auto& [game, count] : games) {
-				simulatedGames[i].game = game;
-				simulatedGames[i++].count = count;
-			}
-			std::sort(std::begin(simulatedGames), std::end(simulatedGames), [](SimulatedGames& a, SimulatedGames& b) {return a.count > b.count; });	
-			return simulatedGames;
-		};
-		
 
-		std::vector<int> mostFreqTotalGames(5);
-		std::vector<int> mostFreqFirstSetGames(5);
-		std::vector<double> gameProbability(5);
-
+		int over_19_count(0);
+		int over_8_count(0);
 		int count = 0;
-		for (const auto& [g, c] : mostOccurringGames(totalGamesCount)) {
-			mostFreqTotalGames[count] = g;
-			gameProbability[count++] = (c / (float)simulations) * 100;
-			if (count == mostFreqTotalGames.size()) break;
-		}
-		count = 0;
-		for (const auto& [g, c] : mostOccurringGames(firstSetGamesCount)) {
-			mostFreqFirstSetGames[count++] = g;
-			if (count == mostFreqFirstSetGames.size()) break;
-		}
-		
 
-		return std::make_tuple(player1Wins, mostFreqTotalGames, gameProbability, mostFreqFirstSetGames);
+		for (const auto& [g, c] : totalGamesCount) {
+			count += c;
+			if (g > 19) over_19_count += c;
+		}
+		double over_19_prob = over_19_count / (double)(count);
+		count = 0;
+		for (const auto& [g, c] : firstSetGamesCount) {
+			count += c;
+			if (g > 8) over_8_count += c;
+		}
+		double over_8_prob = over_8_count / (double)(count);
+
+		return std::make_tuple(player1Wins, over_19_prob, over_8_prob);
 	}
 
 

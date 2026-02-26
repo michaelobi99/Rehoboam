@@ -132,21 +132,50 @@ void split_quaters_score(std::string line, int& full_time_score, int& q1_score, 
 	home = row[6] == 1;
 }
 
+std::string skew_message(double skew, double kurt) {
 
-//void get_recommendation(float pred, float low, float high) {
-//	const int max_dist_range = 24;
-//	bool good_pred = low <= pred && pred <= high;
-//	bool tight_range = (int)(high - low) <= max_dist_range;
-//	if (good_pred && tight_range) {
-//		printf("CONFIDENCE: HIGH\n\n");
-//	}
-//	else {
-//		printf("CONFIDENCE: LOW\n\n");
-//	}
-//}
+	double mag = std::abs(skew);
+	bool left = skew < 0;
 
-float combine_predictions(float pred_1, float pred_2, float pred_3) {
-	return (1/3.f) * (pred_1 + pred_2 + pred_3);
+	// ---- Stability first (kurtosis dominates) ----
+
+	if (kurt < -0.5 && mag < 0.2)
+		return "Highly stable outcome (tight range, low volatility)";
+
+	if (kurt < 0.2 && mag < 0.2)
+		return "Stable and predictable scoring profile";
+
+	// ---- Normal regime ----
+
+	if (kurt < 0.7 && mag < 0.25) {
+		return left
+			? "Slight downside bias with normal volatility"
+			: "Slight upside bias with normal volatility";
+	}
+
+	// ---- Volatile regime ----
+
+	if (kurt < 1.5) {
+		if (mag < 0.25)
+			return "High volatility with balanced risk (wide score range)";
+
+		return left
+			? "Volatile downside risk (unders & collapses likely)"
+			: "Volatile upside risk (overs & blowouts likely)";
+	}
+
+	// ---- Extreme regime ----
+
+	if (mag < 0.25)
+		return "Extreme volatility (unreliable outcome, chaos-prone)";
+
+	return left
+		? "Extreme downside tail risk (collapse-prone game)"
+		: "Extreme upside tail risk (explosive scoring potential)";
+}
+
+void get_recommendation(double skew, double kurt) {
+	std::cout << "Recommendation: " << skew_message(skew, kurt) << "\n";
 }
 
 void read_and_process_quaters_file(std::string const& file_path) {
@@ -203,18 +232,31 @@ void read_and_process_quaters_file(std::string const& file_path) {
 
 		//..........................................................................................................................
 		//Exponential Smoothing
-		float home_exp_pred = exponential_smoothing(home_past_scores);
-		float away_exp_pred = exponential_smoothing(away_past_scores);
+		/*float home_exp_pred = double_exponential_smoothing(home_past_scores);
+		float away_exp_pred = double_exponential_smoothing(away_past_scores);*/
+
+		/*float home_exp_pred_2 = exponential_smoothing(home_past_scores);
+		float away_exp_pred_2 = exponential_smoothing(away_past_scores);*/
 
 		//Simple Linear Regression
-		float home_regression_pred = simple_linear_regression(home_past_scores);
-		float away_regression_pred = simple_linear_regression(away_past_scores);
+		/*float home_regression_pred = simple_linear_regression(home_past_scores);
+		float away_regression_pred = simple_linear_regression(away_past_scores);*/
+
+		double home_pred = predict_next_score(home_past_scores);
+		double away_pred = predict_next_score(away_past_scores);
 
 		float home_mean = mean(home_past_scores);
 		float home_stddev = standard_deviation(home_past_scores, home_mean);
 		float away_mean = mean(away_past_scores);
 		float away_stddev = standard_deviation(away_past_scores, away_mean);
 		float mean_total = home_mean + away_mean;
+		
+		double skewness_home = skew(home_past_scores);
+		double kurt_home = kurtosis(home_past_scores);
+
+		double skewness_away = skew(away_past_scores);
+		double kurt_away = kurtosis(away_past_scores);
+
 
 		float home_lower{ 0 }, away_lower{ 0 };
 		float home_upper{ 0 }, away_upper{ 0 };
@@ -304,16 +346,19 @@ void read_and_process_quaters_file(std::string const& file_path) {
 
 
 		stream << "GAME PREDICTION\n";
-		float home_pred = combine_predictions(home_mean, home_exp_pred, home_regression_pred);
-		float away_pred = combine_predictions(away_mean, away_exp_pred, away_regression_pred);
-		float total = home_pred + away_pred;
-		stream << "Home : " << home_pred << "\n";
-		stream << "Away : " << away_pred << "\n";
-		stream << "Total: " << total << "\n\n";
+
+		float total_2 = home_pred + away_pred;
+
+		stream << "Home : " << home_pred<<"\n";
+		stream << "Away : " << away_pred<<"\n";
+		stream << "Total: " << total_2<<"\n\n";
 
 		printf("%s", stream.str().c_str());
 
-		//get_recommendation(total, home_lower + away_lower, home_upper + away_upper);
+		std::cout << "HOME:\n";
+		get_recommendation(skewness_home, kurt_home);
+		std::cout << "AWAY:\n";
+		get_recommendation(skewness_away, kurt_away);
 
 		//...................................................................................................................................................
 

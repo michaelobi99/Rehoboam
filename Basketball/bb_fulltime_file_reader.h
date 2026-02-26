@@ -50,12 +50,8 @@ void read_and_process_fulltime_file(std::string const& file_path) {
 
 		//..........................................................................................................................
 		//Exponential Smoothing
-		float home_exp_pred = exponential_smoothing(home_past_scores);
-		float away_exp_pred = exponential_smoothing(away_past_scores);
-
-		//Simple Linear Regression
-		float home_regression_pred = simple_linear_regression(home_past_scores);
-		float away_regression_pred = simple_linear_regression(away_past_scores);
+		float home_exp_pred = exponential_smoothing(home_past_scores, 0.35);
+		float away_exp_pred = exponential_smoothing(away_past_scores, 0.35);
 
 		float home_mean = mean(home_past_scores);
 		float home_stddev = standard_deviation(home_past_scores, home_mean);
@@ -139,8 +135,8 @@ void read_and_process_fulltime_file(std::string const& file_path) {
 		stream.str("");
 
 		stream << "GAME PREDICTION\n";
-		float home_pred = combine_predictions(home_mean, home_exp_pred, home_regression_pred);
-		float away_pred = combine_predictions(away_mean, away_exp_pred, away_regression_pred);
+		float home_pred = predict_next_score(home_past_scores);
+		float away_pred = predict_next_score(away_past_scores);
 		float total = home_pred + away_pred;
 		stream << "Home : " << home_pred << "\n";
 		stream << "Away : " << away_pred << "\n";

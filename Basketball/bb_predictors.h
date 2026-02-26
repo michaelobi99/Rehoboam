@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <vector>
 #include <cmath>
 #include <tuple>
@@ -41,22 +41,47 @@ float standard_deviation(const std::vector<int>& scores, float mean) {
 
 //............................................................................................................................................................
 //Exponential smoothing
-#define SMOOTHING_FACTOR 0.35
-
-float exponential_smoothing(const std::vector<int>& scores) {
-	if (scores.size() == 0) return 0;
+float exponential_smoothing(const std::vector<int>& scores, double alpha) {
+	if (scores.empty()) return 0;
 	if (scores.size() < 2) return scores[0];
-	std::vector<int> scores_reversed(std::rbegin(scores), std::rend(scores));
-	int N = scores_reversed.size();
-	float current_smoothed_value{ 0.0 }, previous_smoothed_value{ 0.0 };
-	previous_smoothed_value = scores_reversed[0];
-	for (int i = 1; i < N; ++i) {
-		current_smoothed_value = SMOOTHING_FACTOR * scores[i] + (1 - SMOOTHING_FACTOR) * previous_smoothed_value;
-		previous_smoothed_value = current_smoothed_value;
+
+	int N = scores.size();
+
+	int k = std::min(5, N);
+	double init = 0;
+	for (int i = N - 1; i >= N - k; --i)
+		init += scores[i];
+	init /= (double)k;
+
+	double smoothed = init;
+
+	for (int i = N - 2; i >= 0; --i) {
+		smoothed = alpha * scores[i] + (1 - alpha) * smoothed;
 	}
-	return current_smoothed_value;
+	return smoothed;
 }
 
+
+auto double_exponential_smoothing(const std::vector<int>& vec) -> double {
+	const double alpha = 0.35;  // level smoothing
+	const double beta = 0.15; // trend smoothing
+
+	if (vec.size() == 0) return 0.0;
+	if (vec.size() < 2) return vec[0];
+
+	double level = vec[0];
+	double trend = vec[1] - vec[0];
+
+	for (size_t i = 1; i < vec.size(); ++i) {
+		double prev_level = level;
+		level = alpha * vec[i] + (1.0 - alpha) * (level + trend);
+		trend = beta * (level - prev_level) + (1.0 - beta) * trend;
+	}
+
+	// 1-step-ahead forecast
+	int h = 1;
+	return level + h * trend;
+}
 
 std::vector<int> moving_median_smoother(std::vector<int> const& scores, int window = 3) {
 	size_t length = scores.size() - window + 1;
@@ -72,42 +97,6 @@ std::vector<int> moving_median_smoother(std::vector<int> const& scores, int wind
 //......................................................................................................................................................
 
 
-
-//......................................................................................................................................................
-//Linear regression
-
-float simple_linear_regression(const std::vector<int>& scores) {
-	if (scores.empty()) return 0;
-	if (scores.size() < 2) return scores[0];
-	if (scores.size() < 5) return mean(scores);
-
-	int N = scores.size() - 1; // One less for pairs of (x,y)
-	std::vector<int> x(scores.rbegin(), scores.rend() - 1); // previous scores
-	std::vector<int> Y(scores.rbegin() + 1, scores.rend()); // next scores
-
-	float sum_x = 0.0, sum_y = 0.0, sum_xy = 0.0, sum_x2 = 0.0;
-	for (int i = 0; i < N; i++) {
-		sum_x += x[i];
-		sum_y += Y[i];
-		sum_xy += x[i] * Y[i];
-		sum_x2 += x[i] * x[i];
-	}
-
-	float denominator = (N * sum_x2 - sum_x * sum_x);
-	if (std::abs(denominator) < 1e-6) { // If no clear trend, return last score
-		return x[0];
-	}
-
-	float slope = (N * sum_xy - sum_x * sum_y) / denominator;
-	float y_intercept = (sum_y - slope * sum_x) / N;
-
-	// Use most recent score (Y[N-1] since vector is reversed) for prediction
-	return (slope * Y[N - 1]) + y_intercept;
-}
-
-//..........................................................................................................................................................
-
-
 //.........................................................................................................................................................
 //Z-Distribution
 std::tuple<float, float> z_dist(size_t n, float mean, float stddev, double z_score = 1.96) {
@@ -120,6 +109,58 @@ std::tuple<float, float> z_dist(size_t n, float mean, float stddev, double z_sco
 }
 //.........................................................................................................................................................
 
+double skew(const std::vector<int>& array) {
+	double avg = mean(array);
+	size_t N = array.size();
+	double result = 0.0;
+	for (size_t i{ 0 }; i < N; ++i) {
+		result += (array[i] - avg) * (array[i] - avg) * (array[i] - avg);
+	}
+	result /= (double)N;
+	double var = std::pow(standard_deviation(array, avg), 2);
+	var = std::pow(var, 1.5);
+	if (var < 1e-9) return 0.0;
+	result /= var;
+	return result;
+}
+
+double kurtosis(std::vector<int>& array) {
+	double avg = mean(array);
+	size_t N = array.size();
+
+	if (N < 4) return 0.0;
+
+	double result = 0.0;
+
+	for (size_t i = 0; i < N; ++i) {
+		double diff = array[i] - avg;
+		result += diff * diff * diff * diff; // (x-μ)^4
+	}
+
+	result /= (double)N;
+
+	double var = std::pow(standard_deviation(array, avg), 2);
+	if (var < 1e-9) return 0.0;
+
+	result /= (var * var); // divide by σ^4
+	result -= 3.0;         // excess kurtosis (normal → 0)
+
+	return result;
+}
+
+float predict_next_score(const std::vector<int>& scores) {
+	// Calculate variance to detect stability
+	float avg = mean(scores);
+	float variance = 0.0;
+	for (int s : scores) {
+		variance += (s - avg) * (s - avg);
+	}
+	variance /= (float)scores.size();
+	float std_dev = std::sqrt(variance);
+
+	float exp_smooth = exponential_smoothing(scores, 0.35);
+	return 0.4 * avg + 0.6 * exp_smooth;
+}
 
 //..........................................................................................................................................................
 //T-Distribution

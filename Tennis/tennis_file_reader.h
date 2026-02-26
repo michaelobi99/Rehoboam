@@ -69,7 +69,7 @@ void print_player_stats(Player& player1, Player& player2, std::string surface, s
 		TennisEloPredictor::estimateMatchLength(player1_elo_score, player2_elo_score, bestOf5);
 
 	// Monte Carlo simulation
-	auto [player1Wins, avgGames, avgGamesProb, avgFirstSetGames] =
+	auto [player1Wins, over_19_prob, over_8_prob] =
 		TennisEloPredictor::simulateMatch(player1_elo_score, player2_elo_score, bestOf5, 10000);
 
 	player1Wins /= 100.0;
@@ -115,15 +115,8 @@ void print_player_stats(Player& player1, Player& player2, std::string surface, s
 	stream << std::left << std::setw(25) << "Set win probability:" << std::left << std::setw(25) << player1_set_prob_str << player2_set_prob_str << "\n";
 	stream << std::left << std::setw(25) << "Match win Probability:" << std::left << std::setw(25) << player1_match_win_prob_str << player2_match_win_prob_str << "\n";
 	stream << std::left << std::setw(25) << "simulated win rate:" << std::left << std::setw(25) << player1Wins_str << player2Wins_str << "\n";
-	stream << "Simulated first set games: ";
-	for (auto elem : avgFirstSetGames)
-		stream << elem << ". ";
-	stream << "\n";
-	stream << "Simulated total match games: ";
-	for (int i = 0; i < avgGames.size(); ++i) {
-		stream  <<std::format("{}. ", avgGames[i]);
-	}
-	stream << "\n";
+	stream << "First set over 8.5 games prob: " << over_8_prob * 100 << "%\n";
+	stream << "Total match over 19.5 games prob : "<< over_19_prob * 100 << "%\n";
 	stream << design << "\n\n";
 }
 

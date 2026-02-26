@@ -1,5 +1,3 @@
-#Fresh season scraper
-
 import time
 import os
 import csv
@@ -159,26 +157,26 @@ class FlashscoreBasketballScraper:
 
     def get_match_statistics(self, link: str):
         alt_name = {
-            "Field Goals Attempted": "FGA",
-            "Field Goals Made": "FG",
-            "Field Goals %": "FG%",
-            "2-Point Field G. Attempted": "2FGA",
-            "2-Point Field Goals Made": "2FG",
-            "2-Point Field Goals %": "2FG%",
-            "3-Point Field G. Attempted": "3FGA",
-            "3-Point Field Goals Made": "3FG",
-            "3-Point Field Goals %": "3FG%",
-            "Free Throws Attempted": "FTA",
-            "Free Throws Made": "FT",
-            "Free Throws %": "FT%",
-            "Offensive Rebounds": "OREB",
-            "Defensive Rebounds": "DREB",
-            "Total Rebounds": "TREB",
+            "Field goals attempts": "FGA",
+            "Field goals made": "FG",
+            "Field goals %": "FG%",
+            "2-point field goals attempts": "2FGA",
+            "2-point field goals made": "2FG",
+            "2-point field goals %": "2FG%",
+            "3-point field goals attempts": "3FGA",
+            "3-point field goals made": "3FG",
+            "3-point field goals %": "3FG%",
+            "Free throws attempts": "FTA",
+            "Free throws made": "FT",
+            "Free throws %": "FT%",
+            "Offensive rebounds": "OREB",
+            "Defensive rebounds": "DREB",
+            "Total rebounds": "TREB",
             "Assists": "AST",
             "Blocks": "BLKS",
             "Turnovers": "TOV",
             "Steals": "STL",
-            "Personal Fouls": "P_FOULS"
+            "Personal fouls": "P_FOULS"
         }
 
         self.stats_driver = self.setup_driver()
@@ -210,10 +208,11 @@ class FlashscoreBasketballScraper:
                 home_value = home_value_element.text
                 away_value = away_value_element.text
                 category = category_element.text
+
                 if category.endswith('%'):
                     home_value = home_value.replace('%', '')
                     away_value = away_value.replace('%', '')
-                if category == 'Technical Fouls': continue
+                if category == 'Technical fouls': continue
                 home_stats_name = "H_" + alt_name[category]
                 away_stats_name = "A_" + alt_name[category]
                 result_dict.update({home_stats_name : home_value})
@@ -274,6 +273,7 @@ def season_scraper(link: str, season_text: str, folder: str, field_names: List[s
                 os.fsync(file.fileno())
 
             season_matches, total_count = scraper.get_season_matches(link, saved_count)
+            print(f'total = {total_count}')
             
             counter = saved_count
             for match in season_matches:
@@ -360,7 +360,8 @@ def main():
         
         country = "usa"
         league = "nba"
-        seasons = ["2020/2021"] #, "2024/2025", "2023/2024", "2022/2023", "2021/2022"]
+        seasons = ["2019/2020"] #, "2024/2025", "2023/2024", "2022/2023", "2021/2022"]
+        # seasons = ["2025"] #, "2024/2025", "2023/2024", "2022/2023", "2021/2022"]
         folder = os.path.join(path, league)
         os.makedirs(folder, exist_ok=True)
 
@@ -375,7 +376,7 @@ def main():
                     break
             else:
                 print("No matching seasons found")
-
+            
         for thread in threads:
             thread.start()
 
@@ -398,7 +399,7 @@ if __name__ == "__main__":
 
 
 
-
+#########################################################################################################
 
 
 
@@ -518,6 +519,14 @@ class FlashscoreBasketballScraper:
         seasons_match_details = []
         print(f'length = {len(all_season_matches)}\n')
 
+        if saved_count > len(all_season_matches):
+            print("Error: Matches found is less than stored count. Retrying.")
+            all_season_matches = self.driver.find_elements(By.CLASS_NAME, "event__match")
+            print(f'length = {len(all_season_matches)}\n')
+            if saved_count > len(all_season_matches):
+                print("Error: Matches found is less than stored count. Exiting.")
+                return [], 0
+
         matches =  all_season_matches[:len(all_season_matches) - saved_count]
 
         print(f'matches length = {len(matches)}\n')
@@ -569,26 +578,26 @@ class FlashscoreBasketballScraper:
 
     def get_match_statistics(self, link: str):
         alt_name = {
-            "Field Goals Attempted": "FGA",
-            "Field Goals Made": "FG",
-            "Field Goals %": "FG%",
-            "2-Point Field G. Attempted": "2FGA",
-            "2-Point Field Goals Made": "2FG",
-            "2-Point Field Goals %": "2FG%",
-            "3-Point Field G. Attempted": "3FGA",
-            "3-Point Field Goals Made": "3FG",
-            "3-Point Field Goals %": "3FG%",
-            "Free Throws Attempted": "FTA",
-            "Free Throws Made": "FT",
-            "Free Throws %": "FT%",
-            "Offensive Rebounds": "OREB",
-            "Defensive Rebounds": "DREB",
-            "Total Rebounds": "TREB",
+            "Field goals attempts": "FGA",
+            "Field goals made": "FG",
+            "Field goals %": "FG%",
+            "2-point field goals attempts": "2FGA",
+            "2-point field goals made": "2FG",
+            "2-point field goals %": "2FG%",
+            "3-point field goals attempts": "3FGA",
+            "3-point field goals made": "3FG",
+            "3-point field goals %": "3FG%",
+            "Free throws attempts": "FTA",
+            "Free throws made": "FT",
+            "Free throws %": "FT%",
+            "Offensive rebounds": "OREB",
+            "Defensive rebounds": "DREB",
+            "Total rebounds": "TREB",
             "Assists": "AST",
             "Blocks": "BLKS",
             "Turnovers": "TOV",
             "Steals": "STL",
-            "Personal Fouls": "P_FOULS"
+            "Personal fouls": "P_FOULS"
         }
 
         self.stats_driver = self.setup_driver()
@@ -607,9 +616,7 @@ class FlashscoreBasketballScraper:
             # print(f"stats link = {stats_link}")
             self.stats_driver.get(stats_link)
             time.sleep(3)
-
             statistic_rows = self.stats_driver.find_elements(By.CSS_SELECTOR, "div.section > div.wcl-row_2oCpS")
-
             for row in statistic_rows:
                 category_list = row.find_elements(By.CSS_SELECTOR, "div.wcl-category_Ydwqh > div")
 
@@ -620,10 +627,11 @@ class FlashscoreBasketballScraper:
                 home_value = home_value_element.text
                 away_value = away_value_element.text
                 category = category_element.text
+
                 if category.endswith('%'):
                     home_value = home_value.replace('%', '')
                     away_value = away_value.replace('%', '')
-                if category == 'Technical Fouls': continue
+                if category == 'Technical fouls': continue
                 home_stats_name = "H_" + alt_name[category]
                 away_stats_name = "A_" + alt_name[category]
                 result_dict.update({home_stats_name : home_value})
@@ -783,6 +791,10 @@ def main():
         
         country = "usa"
         league = "nba"
+
+        # country = "japan"
+        # league = "b-league"
+
         season = "2025/2026" #, "2024/2025", "2023/2024", "2022/2023", "2021/2022", "2021/2020"]
         folder = os.path.join(path, league)
         os.makedirs(folder, exist_ok=True)
