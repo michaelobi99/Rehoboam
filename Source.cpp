@@ -1,5 +1,5 @@
 
-#include "Basketball/bb_fulltime_file_reader.h"
+#include "bb_quaters_file_reader.h"
 #include "Tennis/tennis_file_reader.h"
 #include "Baseball/baseball_file_reader.h"
 
@@ -18,17 +18,14 @@ int main(int argc, char* argv[]) {
 
 	const char* file_path = argv[2];
 	std::string sport = argv[1];
-	if (sport == "basketball") {
-		process_basketball_file(file_path, false);
-	}
-	else if (sport == "basketball_q") {
-		process_basketball_file(file_path, true);
+	if (sport == "basketball_q") {
+		read_and_process_quaters_file(file_path);
 	}
 	else if (sport == "tennis") {
 		process_tennis_file(file_path);
 	}
 	else if (sport == "baseball") {
-		process_baseball_file(file_path);
+		//process_baseball_file(file_path);
 	}
 	else{
 		usage();

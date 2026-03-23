@@ -479,7 +479,8 @@ class FlashscoreBasketballScraper:
 
             time.sleep(3)
             
-            season_elements = self.driver.find_elements(By.CSS_SELECTOR, "div.archiveLatte__season > a.archiveLatte__text")
+            season_elements = self.driver.find_elements(By.CSS_SELECTOR, "div.archiveTable__column > a.archiveTable__column--link")
+            # season_elements = self.driver.find_elements(By.CSS_SELECTOR, "div.archiveLatte__season > a.archiveLatte__text")
             seasons = []
             season_links = []
 
@@ -505,7 +506,7 @@ class FlashscoreBasketballScraper:
         while True:
             try:
                 show_more_button = WebDriverWait(self.driver, 10).until(
-                    EC.element_to_be_clickable((By.CLASS_NAME, "wclButtonLink"))
+                    EC.element_to_be_clickable((By.CLASS_NAME, "wcl-buttonLink_jmSkY"))
                 )
                 self.driver.execute_script("arguments[0].scrollIntoView();", show_more_button)
                 time.sleep(0.5) 
@@ -533,8 +534,8 @@ class FlashscoreBasketballScraper:
         for element in matches:
             link = element.find_element(By.TAG_NAME, "a").get_attribute("href")
             date = element.find_element(By.CLASS_NAME, "event__time").text.split()[0]
-            home = element.find_element(By.CLASS_NAME, "event__participant--home").text
-            away = element.find_element(By.CLASS_NAME, "event__participant--away").text
+            home = element.find_element(By.CLASS_NAME, "event__homeParticipant").text
+            away = element.find_element(By.CLASS_NAME, "event__awayParticipant").text
             home_fulltime_score = element.find_element(By.CLASS_NAME, "event__score--home").text
             away_fulltime_score = element.find_element(By.CLASS_NAME, "event__score--away").text
 

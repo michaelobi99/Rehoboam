@@ -92,6 +92,41 @@ std::tuple<std::string, std::vector<int>> split_string_2(const char* str, size_t
 	return std::tuple(name, past_scores);
 }
 
+void split_home_away(const std::string& input, std::vector<int>& home, std::vector<int>& away) {
+	std::istringstream iss(input);
+	std::string token;
+
+	while (iss >> token) {
+		if (token.size() < 2)
+			continue;
+
+		char location = token.back();
+		int value = std::stoi(token.substr(0, token.size() - 1));
+
+		if (location == 'H' && home.size() < 10)
+			home.push_back(value);
+		else if (location == 'A'  && away.size() < 10)
+			away.push_back(value);
+	}
+}
+
+std::tuple<std::string, std::vector<int>, std::vector<int>> split_string_3(const char* str, size_t length) {
+	std::istringstream stream(str);
+	std::string name;
+	std::getline(stream, name, ':');
+	name = trim(name);
+
+	std::string past_scores_str{ "" };
+	std::getline(stream, past_scores_str, ':');
+	past_scores_str = trim(past_scores_str);
+
+	std::vector<int> past_home_scores, past_away_scores;
+	split_home_away(past_scores_str, past_home_scores, past_away_scores);
+
+	return std::tuple(name, past_home_scores, past_away_scores);
+}
+
+
 void get_h2h_score_count(std::string const& line, unsigned& count) {
 	unsigned pointer = line.size() - 1;
 	std::string score_count{ "00" };
@@ -230,47 +265,58 @@ void read_and_process_quaters_file(std::string const& file_path) {
 		match_details.clear();
 		while (std::getline(file, match_details) && match_details.size() <= 1) continue;
 
-		//..........................................................................................................................
-		//Exponential Smoothing
-		/*float home_exp_pred = double_exponential_smoothing(home_past_scores);
-		float away_exp_pred = double_exponential_smoothing(away_past_scores);*/
+		struct GamePrediction {
+			float home_pred;
+			float away_pred;
+			float total_pred;
+			float home_lower;
+			float home_upper;
+			float away_lower;
+			float away_upper;
+			float total_lower;
+			float total_upper;
+			double skewness_home;
+			double skewness_away;
+			double kurtosis_home;
+			double kurtosis_away;
+		};
 
-		/*float home_exp_pred_2 = exponential_smoothing(home_past_scores);
-		float away_exp_pred_2 = exponential_smoothing(away_past_scores);*/
+		GamePrediction pred;
 
-		//Simple Linear Regression
-		/*float home_regression_pred = simple_linear_regression(home_past_scores);
-		float away_regression_pred = simple_linear_regression(away_past_scores);*/
+		pred.home_pred = predict_next_score(home_past_scores);
 
-		double home_pred = predict_next_score(home_past_scores);
-		double away_pred = predict_next_score(away_past_scores);
+		pred.away_pred = predict_next_score(away_past_scores);
+
+		pred.total_pred = pred.home_pred + pred.away_pred;
 
 		float home_mean = mean(home_past_scores);
-		float home_stddev = standard_deviation(home_past_scores, home_mean);
 		float away_mean = mean(away_past_scores);
+		float home_stddev = standard_deviation(home_past_scores, home_mean);
 		float away_stddev = standard_deviation(away_past_scores, away_mean);
-		float mean_total = home_mean + away_mean;
-		
-		double skewness_home = skew(home_past_scores);
-		double kurt_home = kurtosis(home_past_scores);
 
-		double skewness_away = skew(away_past_scores);
-		double kurt_away = kurtosis(away_past_scores);
+		pred.skewness_home = skew(home_past_scores);
 
+		pred.kurtosis_home = kurtosis(home_past_scores);
 
-		float home_lower{ 0 }, away_lower{ 0 };
-		float home_upper{ 0 }, away_upper{ 0 };
+		pred.skewness_away = skew(away_past_scores);
 
-		if (home_past_scores.size() > 30 || away_past_scores.size() > 30) {
-			//Normal distribution calculation
-			std::tie(home_lower, home_upper) = z_dist(home_past_scores.size(), home_mean, home_stddev);
-			std::tie(away_lower, away_upper) = z_dist(away_past_scores.size(), away_mean, away_stddev);
-		}
-		else {
-			//T-distribution calculation
-			std::tie(home_lower, home_upper) = t_dist(home_past_scores.size(), home_mean, home_stddev);
-			std::tie(away_lower, away_upper) = t_dist(away_past_scores.size(), away_mean, away_stddev);
-		}
+		pred.kurtosis_away = kurtosis(away_past_scores);
+
+		/*std::tie(pred.home_lower, pred.home_upper) =
+			bootstrap_prediction_interval(home_past_scores);
+
+		std::tie(pred.away_lower, pred.away_upper) =
+			bootstrap_prediction_interval(away_past_scores);*/
+
+		std::tie(pred.home_lower, pred.home_upper) =
+			t_dist(home_past_scores.size(), home_mean, home_stddev, 0.98f);
+
+		std::tie(pred.away_lower, pred.away_upper) =
+			t_dist(away_past_scores.size(), away_mean, away_stddev, 0.98f);
+
+		// Total CI (sum of independent intervals)
+		pred.total_lower = pred.home_lower + pred.away_lower;
+		pred.total_upper = pred.home_upper + pred.away_upper;
 		//.......................................................................................................................
 
 #ifdef _MSC_VER
@@ -313,7 +359,7 @@ void read_and_process_quaters_file(std::string const& file_path) {
 		stream << "Home: ";
 		printf("%-5s", stream.str().c_str());
 		stream.str("");
-		stream << "[" << home_lower << " - " << home_upper << "]";
+		stream << "[" << pred.home_lower << " - " << pred.home_upper << "]";
 		printf("%s\n", stream.str().c_str());
 		stream.str("");
 
@@ -321,7 +367,7 @@ void read_and_process_quaters_file(std::string const& file_path) {
 		stream << "Away: ";
 		printf("%-5s", stream.str().c_str());
 		stream.str("");
-		stream << "[" << away_lower << " - " << away_upper << "]";
+		stream << "[" << pred.away_lower << " - " << pred.away_upper << "]";
 		printf("%s\n", stream.str().c_str());
 		stream.str("");
 
@@ -329,10 +375,9 @@ void read_and_process_quaters_file(std::string const& file_path) {
 		stream << "H2H : ";
 		printf("%-5s", stream.str().c_str());
 		stream.str("");
-		stream << "[" << home_lower + away_lower << " - " << home_upper + away_upper << "]";
+		stream << "[" << pred.total_lower << " - " << pred.total_upper << "]";
 		printf("%s\n\n", stream.str().c_str());
 		stream.str("");
-
 
 		auto print_vec = []<typename T>(std::vector<T>&vec, std::ostringstream & stream) {
 			for (T elem : vec) { stream << std::left << std::setw(4) << elem; }
@@ -344,21 +389,18 @@ void read_and_process_quaters_file(std::string const& file_path) {
 		stream << "Away: ";  print_vec(away_past_scores, stream);
 		stream << "\n";
 
-
 		stream << "GAME PREDICTION\n";
 
-		float total_2 = home_pred + away_pred;
-
-		stream << "Home : " << home_pred<<"\n";
-		stream << "Away : " << away_pred<<"\n";
-		stream << "Total: " << total_2<<"\n\n";
+		stream << "Home : " << pred.home_pred<<"\n";
+		stream << "Away : " << pred.away_pred<<"\n";
+		stream << "Total: " << pred.total_pred<<"\n\n";
 
 		printf("%s", stream.str().c_str());
 
 		std::cout << "HOME:\n";
-		get_recommendation(skewness_home, kurt_home);
+		get_recommendation(pred.skewness_home, pred.kurtosis_home);
 		std::cout << "AWAY:\n";
-		get_recommendation(skewness_away, kurt_away);
+		get_recommendation(pred.skewness_away, pred.kurtosis_away);
 
 		//...................................................................................................................................................
 
