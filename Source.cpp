@@ -2,6 +2,7 @@
 #include "bb_quaters_file_reader.h"
 #include "Tennis/tennis_file_reader.h"
 #include "Baseball/baseball_file_reader.h"
+#include "football_file_reader.h"
 
 void usage() {
 	printf("Usage: Rehoboam [Sport] [filename]\n");
@@ -25,7 +26,10 @@ int main(int argc, char* argv[]) {
 		process_tennis_file(file_path);
 	}
 	else if (sport == "baseball") {
-		//process_baseball_file(file_path);
+		process_baseball_file(file_path);
+	}
+	else if (sport == "football") {
+		process_football_file(file_path);
 	}
 	else{
 		usage();

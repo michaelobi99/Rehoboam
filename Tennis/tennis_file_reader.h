@@ -30,7 +30,7 @@ void print_player_stats(Player& player1, Player& player2, std::string surface, s
 	std::transform(surface.begin(), surface.end(), surface.begin(), [](unsigned char c) { return std::tolower(c); });
 	stream << std::left << std::setw(25) << "Name:" << std::left << std::setw(25) << player1.name << player2.name << "\n";
 	stream << std::left << std::setw(25) << "Age:" << std::left << std::setw(25) << player1.age << player2.age << "\n";
-	stream << std::left << std::setw(25) << "Official Ranking:" << std::left << std::setw(25) << player1.ranking << player2.ranking << "\n";
+	stream << std::left << std::setw(25) << "Live Ranking:" << std::left << std::setw(25) << player1.ranking << player2.ranking << "\n";
 	stream << std::left << std::setw(25) << "Elo Ranking:" << std::left << std::setw(25) << player1.elo_ranking << player2.elo_ranking << "\n";
 	float player1_elo_score{ 0.0 }, player2_elo_score{ 0.0 };
 	if (surface.contains("hard")) {
@@ -69,7 +69,7 @@ void print_player_stats(Player& player1, Player& player2, std::string surface, s
 		TennisEloPredictor::estimateMatchLength(player1_elo_score, player2_elo_score, bestOf5);
 
 	// Monte Carlo simulation
-	auto [player1Wins, over_19_prob, over_8_prob] =
+	auto [player1Wins, match_over_prob, over_8_prob, total_sets, conf] =
 		TennisEloPredictor::simulateMatch(player1_elo_score, player2_elo_score, bestOf5, 10000);
 
 	player1Wins /= 100.0;
@@ -116,7 +116,11 @@ void print_player_stats(Player& player1, Player& player2, std::string surface, s
 	stream << std::left << std::setw(25) << "Match win Probability:" << std::left << std::setw(25) << player1_match_win_prob_str << player2_match_win_prob_str << "\n";
 	stream << std::left << std::setw(25) << "simulated win rate:" << std::left << std::setw(25) << player1Wins_str << player2Wins_str << "\n";
 	stream << "First set over 8.5 games prob: " << over_8_prob * 100 << "%\n";
-	stream << "Total match over 19.5 games prob : "<< over_19_prob * 100 << "%\n";
+	if (!bestOf5)
+		stream << "Total match over 19.5 games prob : "<< match_over_prob * 100 << "%\n";
+	else
+		stream << "Total match over 33.5 games prob : " << match_over_prob * 100 << "%\n";
+	stream << "Likely total sets : "<< total_sets << " , probablilty: " << conf<< "% \n";
 	stream << design << "\n\n";
 }
 

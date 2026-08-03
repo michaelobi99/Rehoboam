@@ -263,121 +263,17 @@ std::tuple<float, float> t_dist(size_t n, float mean, float stddev, float confid
 	return { low, high };
 }
 
+std::string trim(const std::string& str) {
+	auto start = std::find_if_not(str.begin(), str.end(), [](unsigned char ch) {
+		return std::isspace(ch);
+		});
+
+	auto end = std::find_if_not(str.rbegin(), str.rend(), [](unsigned char ch) {
+		return std::isspace(ch);
+		}).base();
+
+	return (start < end) ? std::string(start, end) : "";
+}
+
+
 //.......................................................................................................................................................
-
-//Autoregressive model
-double dot(const std::vector<double>& a, const std::vector<double>& b)
-{
-	double s = 0;
-	for (size_t i = 0; i < a.size(); ++i)
-		s += a[i] * b[i];
-	return s;
-}
-
-std::vector<double> solve_normal_equations(
-	const std::vector<std::vector<double>>& X,
-	const std::vector<double>& y)
-{
-	int p = X[0].size();
-
-	std::vector<std::vector<double>> XtX(p, std::vector<double>(p, 0));
-	std::vector<double> Xty(p, 0);
-
-	for (size_t i = 0; i < X.size(); ++i)
-	{
-		for (int j = 0; j < p; ++j)
-		{
-			Xty[j] += X[i][j] * y[i];
-			for (int k = 0; k < p; ++k)
-				XtX[j][k] += X[i][j] * X[i][k];
-		}
-	}
-
-	// simple Gauss elimination
-	for (int i = 0; i < p; ++i)
-	{
-		double pivot = XtX[i][i];
-		for (int j = i; j < p; ++j)
-			XtX[i][j] /= pivot;
-
-		Xty[i] /= pivot;
-
-		for (int k = 0; k < p; ++k)
-		{
-			if (k == i) continue;
-
-			double factor = XtX[k][i];
-			for (int j = i; j < p; ++j)
-				XtX[k][j] -= factor * XtX[i][j];
-
-			Xty[k] -= factor * Xty[i];
-		}
-	}
-
-	return Xty;
-}
-
-double AR_forecast(const std::vector<double>& x, int p)
-{
-	int n = x.size();
-	if (n <= p) return x.back();
-
-	std::vector<std::vector<double>> X;
-	std::vector<double> y;
-
-	for (int t = p; t < n; ++t)
-	{
-		std::vector<double> row;
-
-		for (int j = 1; j <= p; ++j)
-			row.push_back(x[t - j]);
-
-		X.push_back(row);
-		y.push_back(x[t]);
-	}
-
-	std::vector<double> phi = solve_normal_equations(X, y);
-
-	std::vector<double> last(p);
-	for (int j = 1; j <= p; ++j)
-		last[j - 1] = x[n - j];
-
-	return dot(phi, last);
-}
-
-//ARIMA
-std::vector<double> difference(const std::vector<double>& x, int d)
-{
-	std::vector<double> diff(x.begin(), x.end());
-
-	for (int k = 0; k < d; ++k)
-	{
-		std::vector<double> temp;
-
-		for (size_t i = 1; i < diff.size(); ++i)
-			temp.push_back(diff[i] - diff[i - 1]);
-
-		diff = temp;
-	}
-
-	return diff;
-}
-
-double ARIMA_forecast(const std::vector<double>& x, int p, int d)
-{
-	if (x.size() <= p + d)
-		return x.back();
-
-	std::vector<double> diff = difference(x, d);
-
-	std::vector<double> diff_vector(diff.begin(), diff.end());
-
-	double forecast_diff = AR_forecast(diff_vector, p);
-
-	double result = x.back();
-
-	for (int i = 0; i < d; ++i)
-		result += forecast_diff;
-
-	return result;
-}

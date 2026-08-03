@@ -198,7 +198,7 @@ public:
 	}
 
 	// Simulate a match using Monte Carlo method
-	static std::tuple<int, double, double> simulateMatch(
+	static std::tuple<int, double, double, int, double> simulateMatch(
 		double elo1, double elo2, bool bestOf5 = false, int simulations = 1000000) {
 
 		double pointProb = calculatePointWinProbability_2(elo1, elo2, bestOf5);
@@ -209,10 +209,12 @@ public:
 
 		int player1Wins = 0;
 		int totalGames = 0;
-		int totalSets = 0;
+		int twoSetsCount{ 0 }, threeSetsCount{ 0 };
+		int fourSetsCount{ 0 }, fiveSetsCount{ 0 };
 		std::vector<std::pair<int, int>> setScores;
 		std::unordered_map<int, int> totalGamesCount;
 		std::unordered_map<int, int> firstSetGamesCount;
+		int totalSets = 0;
 
 		for (int sim = 0; sim < simulations; ++sim) {
 			int sets1 = 0, sets2 = 0;
@@ -236,19 +238,68 @@ public:
 
 			if (sets1 > sets2) player1Wins++;
 			totalGamesCount[matchGames]++;
-			totalSets += sets1 + sets2;
+
+			totalSets = sets1 + sets2;
+
+			if (totalSets == 2) ++twoSetsCount;
+			else if (totalSets == 3) ++threeSetsCount;
+			else if (totalSets == 4) ++fourSetsCount;
+			else ++fiveSetsCount;
 		}
 
+
+		if ((twoSetsCount + threeSetsCount + fourSetsCount + fiveSetsCount) != simulations) {
+			std::cout << "ERROR: sets counts not equal to simulation total!\n";
+		}
+		double totalSetsConfidence{ 0.0 };
+
+		if (!bestOf5) {
+			if (twoSetsCount < threeSetsCount) {
+				totalSetsConfidence = (threeSetsCount * 100) / (float)simulations;
+				totalSets = 3;
+			}
+			else {
+				totalSetsConfidence = (twoSetsCount * 100) / (float)simulations;
+				totalSets = 2;
+			}
+		}
+		else {
+			if (threeSetsCount <= fourSetsCount && fiveSetsCount <= fourSetsCount) {
+				totalSetsConfidence = (fourSetsCount * 100) / (float)simulations;
+				totalSets = 4;
+			}
+			else if (fourSetsCount <= threeSetsCount && fiveSetsCount <= threeSetsCount){
+				totalSetsConfidence = (threeSetsCount * 100) / (float)simulations;
+				totalSets = 3;
+			}
+			else {
+				totalSetsConfidence = (fiveSetsCount * 100) / (float)simulations;
+				totalSets = 5;
+			}
+		}
+		
 
 		int over_19_count(0);
+		int over_33_count(0);
 		int over_8_count(0);
+		double over_19_prob{ 0.0 }, over_33_prob{ 0.0 };
 		int count = 0;
 
-		for (const auto& [g, c] : totalGamesCount) {
-			count += c;
-			if (g > 19) over_19_count += c;
+		if (!bestOf5) {
+			for (const auto& [g, c] : totalGamesCount) {
+				count += c;
+				if (g > 19) over_19_count += c;
+			}
+			over_19_prob = over_19_count / (double)(count);
 		}
-		double over_19_prob = over_19_count / (double)(count);
+		else {
+			for (const auto& [g, c] : totalGamesCount) {
+				count += c;
+				if (g > 33) over_33_count += c;
+			}
+			over_33_prob = over_33_count / (double)(count);
+		}
+
 		count = 0;
 		for (const auto& [g, c] : firstSetGamesCount) {
 			count += c;
@@ -256,7 +307,10 @@ public:
 		}
 		double over_8_prob = over_8_count / (double)(count);
 
-		return std::make_tuple(player1Wins, over_19_prob, over_8_prob);
+
+		return !bestOf5 ? 
+			std::make_tuple(player1Wins, over_19_prob, over_8_prob, totalSets, totalSetsConfidence) : 
+			std::make_tuple(player1Wins, over_33_prob, over_8_prob, totalSets, totalSetsConfidence);
 	}
 
 
